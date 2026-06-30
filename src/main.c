@@ -60,9 +60,7 @@
 static void G_GNUC_NORETURN
 show_version(void) {
     g_print(_("\n"
-             "Parole Media Player %s\n\n"
-             "Part of the Xfce Goodies Project\n"
-             "https://goodies.xfce.org\n\n"
+             "Respite Media Player %s\n\n"
              "Licensed under the GNU GPL.\n\n"
              "Please report bugs to <%s>.\n\n"),
              VERSION_FULL, PACKAGE_BUGREPORT);
@@ -279,7 +277,7 @@ int main(int argc, char **argv) {
     xfce_textdomain(GETTEXT_PACKAGE, LOCALEDIR, "UTF-8");
 
     g_set_application_name(PACKAGE_NAME);
-    g_set_prgname("org.xfce.Parole");
+    g_set_prgname("org.gnome.Respite");
 
     gtk_init(&argc, &argv);
 

@@ -1,57 +1,52 @@
-[![License](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://gitlab.xfce.org/apps/parole/-/blob/master/COPYING)
+# Respite Media Player
 
-# parole
+A modern simple media player based on GStreamer, forked from [Parole](https://gitlab.xfce.org/apps/parole).
 
-Parole is a modern simple media player based on the GStreamer framework and 
-written to fit well in the Xfce desktop. Parole features playback of local 
-media files, DVD/CD and live streams.
+## Features
 
-Parole is extensible via plugins, for a complete how-to on writing a plugin for
-Parole, see the Plugins API documentation and the plugins directory which 
-contains some useful examples.
+- **Lightweight** — Minimal dependencies, fast startup
+- **GTK3 native** — Integrates well with GTK3-based desktops (Cinnamon, MATE, XFCE)
+- **GStreamer backend** — Plays virtually all media formats
+- **Plugin system** — Extensible via MPRIS2, notifications, tray icon
+- **Subtitle support** — Load and display subtitles
+- **DVD/CD playback** — Direct disc playback support
+- **Live streams** — Stream online content
 
-----
+## Dependencies
 
-### Homepage
+- GTK3 >= 3.24
+- GStreamer >= 1.0
+- GLib >= 2.66
+- D-Bus
+- TagLib
 
-[Parole documentation](https://docs.xfce.org/apps/parole/start)
+## Building
 
-### Changelog
+```bash
+meson setup build
+meson compile -C build
+sudo meson install -C build
+```
 
-See [NEWS](https://gitlab.xfce.org/apps/parole/-/blob/master/NEWS) for details on changes and fixes made in the current release.
+## Plugins
 
-### Source Code Repository
+- **mpris2** — MPRIS2 D-Bus interface for media players
+- **notify** — Desktop notifications
+- **tray** — System tray integration
 
-[Parole source code](https://gitlab.xfce.org/apps/parole)
+## Differences from Parole
 
-### Download a Release Tarball
+- Removed Xfce-specific dependencies (libxfce4ui, libxfce4util, xfconf)
+- Uses standard GTK3 widgets
+- Independent from Xfce desktop environment
+- Modernized codebase
 
-[Parole archive](https://archive.xfce.org/src/apps/parole)
-    or
-[Parole tags](https://gitlab.xfce.org/apps/parole/-/tags)
+## Original Source
 
-### Installation
+This project is forked from Parole by the Xfce project:
+- Original: https://gitlab.xfce.org/apps/parole
+- License: GPL-2.0-or-later
 
-From source code repository: 
+## License
 
-    % cd parole
-    % meson setup build
-    % meson compile -C build
-    % meson install -C build
-
-From release tarball:
-
-    % tar xf parole-<version>.tar.xz
-    % cd parole-<version>
-    % meson setup build
-    % meson compile -C build
-    % meson install -C build
-
-### Uninstallation
-
-    % ninja uninstall -C build
-
-### Reporting Bugs
-
-Visit the [reporting bugs](https://docs.xfce.org/apps/parole/bugs) page to view currently open bug reports and instructions on reporting new bugs or submitting bugfixes.
-
+GPL-2.0-or-later

@@ -2,6 +2,7 @@
  * * Copyright (C) 2009-2011 Ali <aliov@xfce.org>
  * * Copyright (C) 2012-2017 Simon Steinbeiß <ochosi@xfce.org>
  * * Copyright (C) 2012-2020 Sean Davis <bluesabre@xfce.org>
+ * * Copyright (C) 2026 Twilight0 <twilight0@vivaldi.net>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -40,7 +41,7 @@
  * parole_about:
  * @parent : the parent application window
  *
- * Display the About dialog for Parole.
+ * Display the About dialog for Respite.
  **/
 void parole_about(GtkWindow *parent) {
     /* List of authors */
@@ -48,6 +49,7 @@ void parole_about(GtkWindow *parent) {
         "Ali Abdallah <aliov@xfce.org>",
         "Simon Steinbeiss <simon@xfce.org>",
         "Sean Davis <bluesabre@xfce.org>",
+        "Twilight0 <twilight0@vivaldi.net>",
         NULL,
     };
 
@@ -63,19 +65,19 @@ void parole_about(GtkWindow *parent) {
     "Copyright \302\251 2009-2011 Ali Abdallah\n"
     "Copyright \302\251 2012-2017 Simon Steinbeiss\n"
     "Copyright \302\251 2012-2020 Sean Davis\n"
-    "Copyright \302\251 2021-" COPYRIGHT_YEAR " The Xfce development team";
+    "Copyright \302\251 2026 Twilight0";
 
     gtk_show_about_dialog(parent,
         "authors", authors,
-        "comments", _("A modern simple media player for the Xfce Desktop Environment."),
+        "comments", _("A modern simple media player."),
         "documenters", documenters,
         "copyright", copyrights,
         "license", XFCE_LICENSE_GPL,
-        "logo-icon-name", "org.xfce.parole",
-        "program-name", _("Parole Media Player"),
+        "logo-icon-name", "org.gnome.Respite",
+        "program-name", _("Respite Media Player"),
         "translator-credits", _("translator-credits"),
         "version", VERSION_FULL,
-        "website", "https://docs.xfce.org/apps/parole/start",
-        "website-label", _("Visit Parole website"),
+        "website", "https://github.com/Twilight0/respite",
+        "website-label", _("Visit Respite website"),
         NULL);
 }

@@ -1,0 +1,28 @@
+[Desktop Entry]
+Name=Respite Media Player
+Comment=Play your media
+Icon=org.gnome.Respite
+Exec=respite %F
+Terminal=false
+Type=Application
+Categories=GTK;AudioVideo;Player;Video;
+StartupNotify=true
+Keywords=Media;Player;Audio;Video;Music;Playback;
+MimeType=@MIMETYPE@
+
+Actions=Play;Previous;Next;
+
+[Desktop Action Play]
+Exec=respite --play
+Name=Play/Pause
+Icon=media-playback-start-symbolic
+
+[Desktop Action Previous]
+Exec=respite --previous
+Name=Previous Track
+Icon=media-skip-backward-symbolic
+
+[Desktop Action Next]
+Exec=respite --next
+Name=Next Track
+Icon=media-skip-forward-symbolic

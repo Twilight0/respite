@@ -1,6 +1,6 @@
 i18n.merge_file(
-  input: 'org.xfce.Parole.appdata.xml.in',
-  output: 'org.xfce.Parole.appdata.xml',
+  input: 'org.gnome.Respite.appdata.xml.in',
+  output: 'org.gnome.Respite.appdata.xml',
   po_dir: '..' / '..' / 'po',
   type: 'xml',
   install: true,

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 Twilight0 <twilight0@vivaldi.net> -->
+<component type="desktop-application">
+  <id>org.gnome.Respite</id>
+  <metadata_license>CC-BY-3.0</metadata_license>
+  <project_license>GPL-2.0+</project_license>
+  <name>Respite</name>
+  <summary>Modern and simple media player</summary>
+  <translation type="gettext">respite</translation>
+
+  <description>
+    <p>Respite is a modern simple media player based on the GStreamer
+       framework. It is designed with simplicity, speed and resource
+       usage in mind.
+    </p>
+    <p>Respite features playback of local media files, including
+       video with subtitles support, Audio CDs, DVDs, and live streams.
+       Respite is also extensible via plugins.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">org.gnome.Respite.desktop</launchable>
+
+  <url type="homepage">https://github.com/Twilight0/respite</url>
+  <url type="bugtracker">https://github.com/Twilight0/respite/issues</url>
+
+  <provides>
+    <binary>respite</binary>
+  </provides>
+
+  <releases>
+    <release version="1.0.0" date="2026-06-30">
+      <description>
+        <p>Initial release of Respite media player. Fork of Parole
+        with Xfce dependencies removed and modernized codebase.
+        </p>
+      </description>
+    </release>
+  </releases>
+
+</component>
