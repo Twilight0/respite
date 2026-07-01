@@ -105,6 +105,9 @@ void        respite_gst_play_uri             (RespiteGst *gst,
                                              const gchar *uri,
                                              const gchar *subtitles);
 
+void        respite_gst_play_pipe            (RespiteGst *gst,
+                                             const gchar *url);
+
 void        respite_gst_play_device_uri      (RespiteGst *gst,
                                              const gchar *uri,
                                              const gchar *device);
