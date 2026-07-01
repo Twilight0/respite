@@ -1,10 +1,10 @@
-libparolegst_sources = [
-  'parole-gst.c',
-  'parole-gst.h',
-  parole_enum_types_h,
+librespitegst_sources = [
+  'respite-gst.c',
+  'respite-gst.h',
+  respite_enum_types_h,
 ]
 
-libparolegst_sources += gnome.genmarshal(
+librespitegst_sources += gnome.genmarshal(
   'gstmarshal',
   sources: 'gstmarshal.list',
   prefix: '_gmarshal',
@@ -12,14 +12,14 @@ libparolegst_sources += gnome.genmarshal(
   install_header: false,
 )
 
-libparolegst_sources += gnome.mkenums_simple(
+librespitegst_sources += gnome.mkenums_simple(
   'gst-enum-types',
   sources: [
-    'parole-gst.h',
+    'respite-gst.h',
   ]
 )
 
-libparolegst_deps = [
+librespitegst_deps = [
   glib,
   gstreamer,
   gstreamer_base,
@@ -28,28 +28,27 @@ libparolegst_deps = [
   gstreamer_pbutils,
   gstreamer_tag,
   gtk,
-  libparole_dep,
-  libparolecommon_dep,
-  libxfce4util,
+  librespite_dep,
+  librespitecommon_dep,
   x11_deps,
 ]
 
-libparolegst = static_library(
-  'parolegst',
-  libparolegst_sources,
+librespitegst = static_library(
+  'respitegst',
+  librespitegst_sources,
   include_directories: [
     include_directories('..' / '..'),
     include_directories('..' / 'misc'),
   ],
   c_args: [
-    '-DPAROLE_COMPILATION',
-    '-DG_LOG_DOMAIN="@0@"'.format('parolegst'),
+    '-DRESPITE_COMPILATION',
+    '-DG_LOG_DOMAIN="@0@"'.format('respitegst'),
   ],
-  dependencies: libparolegst_deps,
+  dependencies: librespitegst_deps,
   install: false,
 )
 
-libparolegst_dep = declare_dependency(
-  dependencies: libparolegst_deps,
-  link_with: libparolegst,
+librespitegst_dep = declare_dependency(
+  dependencies: librespitegst_deps,
+  link_with: librespitegst,
 )

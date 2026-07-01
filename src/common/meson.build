@@ -1,61 +1,61 @@
-libparolecommon_sources = [
-  'parole-common.c',
-  'parole-common.h',
-  'parole-powermanager.c',
-  'parole-powermanager.h',
-  'parole-rc-utils.c',
-  'parole-rc-utils.h',
+librespitecommon_sources = [
+  'respite-common.c',
+  'respite-common.h',
+  'respite-powermanager.c',
+  'respite-powermanager.h',
+  'respite-rc-utils.c',
+  'respite-rc-utils.h',
 ]
 
-libparolecommon_deps = [
+librespitecommon_deps = [
   gio,
   glib,
   gtk,
-  libxfce4util,
 ]
 
-libparolecommon = static_library(
-  'parolecommon',
-  libparolecommon_sources,
+librespitecommon = static_library(
+  'respitecommon',
+  librespitecommon_sources,
+  include_directories: include_directories('../..'),
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format('parolecommon'),
+    '-DG_LOG_DOMAIN="@0@"'.format('respitecommon'),
   ],
-  dependencies: libparolecommon_deps,
+  dependencies: librespitecommon_deps,
   install: false,
 )
 
-libparolecommon_dep = declare_dependency(
-  dependencies: libparolecommon_deps,
-  link_with: libparolecommon,
+librespitecommon_dep = declare_dependency(
+  dependencies: librespitecommon_deps,
+  link_with: librespitecommon,
 )
 
 if enable_x11
-  libparolescreensaver_sources = [
-    'parole-screensaver.c',
-    'parole-screensaver.h',
+  librespite_screensaver_sources = [
+    'respite-screensaver.c',
+    'respite-screensaver.h',
   ]
 
-  libparolescreensaver_deps = [
+  librespite_screensaver_deps = [
     glib,
     gtk,
-    libxfce4util,
     x11_deps,
   ]
 
-  libparolescreensaver = static_library(
-    'parolescreensaver',
-    libparolescreensaver_sources,
+  librespite_screensaver = static_library(
+    'respitescreensaver',
+    librespite_screensaver_sources,
+    include_directories: include_directories('../..'),
     c_args: [
-      '-DG_LOG_DOMAIN="@0@"'.format('parolescreensaver'),
+      '-DG_LOG_DOMAIN="@0@"'.format('respitescreensaver'),
     ],
-    dependencies: libparolescreensaver_deps,
+    dependencies: librespite_screensaver_deps,
     install: false,
   )
 
-  libparolescreensaver_dep = declare_dependency(
-    dependencies: libparolescreensaver_deps,
-    link_with: libparolescreensaver,
+  librespite_screensaver_dep = declare_dependency(
+    dependencies: librespite_screensaver_deps,
+    link_with: librespite_screensaver,
   )
 else
-  libparolescreensaver_dep = dependency('', required: false)
+  librespite_screensaver_dep = dependency('', required: false)
 endif

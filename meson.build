@@ -21,8 +21,8 @@ dependency_versions = {
   'gtk': '>= 3.24.0',
   'dbus': '>= 0.60',
   'dbus-glib': '>= 0.70',
-  'xfce4': '>= 4.18.0',
   'libnotify': '>= 0.7.8',
+  'xapp': '>= 2.0.0',
   'x11': '>= 1.6.7',
   'gstreamer': '>= 1.0.0',
   'taglib': '>= 1.4',
@@ -35,9 +35,6 @@ gio = dependency('gio-2.0', version: dependency_versions['glib'])
 gtk = dependency('gtk+-3.0', version: dependency_versions['gtk'])
 dbus = dependency('dbus-1', version: dependency_versions['dbus'])
 dbus_glib = dependency('dbus-glib-1', version: dependency_versions['dbus-glib'])
-libxfce4ui = dependency('libxfce4ui-2', version: dependency_versions['xfce4'])
-libxfce4util = dependency('libxfce4util-1.0', version: dependency_versions['xfce4'])
-xfconf = dependency('libxfconf-0', version: dependency_versions['xfce4'])
 
 gstreamer = dependency('gstreamer-1.0', version: dependency_versions['gstreamer'])
 gstreamer_base = dependency('gstreamer-base-1.0', version: dependency_versions['gstreamer'])
@@ -55,6 +52,7 @@ wayland_deps += dependency('gdk-wayland-3.0', version: dependency_versions['gtk'
 
 taglib_c = dependency('taglib_c', version: dependency_versions['taglib'], required: get_option('taglib'))
 libnotify = dependency('libnotify', version: dependency_versions['libnotify'], required: get_option('notify-plugin'))
+xapp = dependency('xapp', version: dependency_versions['xapp'], required: get_option('tray-plugin'))
 
 dbus_binding_tool = find_program('dbus-binding-tool')
 
@@ -157,8 +155,8 @@ extra_cflags += [
   '-DPACKAGE_DATADIR="@0@"'.format(pkgdatadir),
   '-DCOPYRIGHT_YEAR="@0@"'.format(copyright_year),
   '-DPACKAGE_LOCALE_DIR="@0@"'.format(get_option('prefix') / get_option('localedir')),
-  '-DPACKAGE_URL="https://docs.xfce.org/@0@/@1@/start"'.format(project_namespace, meson.project_name()),
-  '-DPACKAGE_BUGREPORT="https://gitlab.xfce.org/@0@/@1@/-/issues"'.format(project_namespace, meson.project_name()),
+  '-DPACKAGE_URL="https://github.com/Twilight0/respite"',
+  '-DPACKAGE_BUGREPORT="https://github.com/Twilight0/respite/issues"',
   '-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name()),
   '-DPREFIX="@0@"'.format(get_option('prefix')),
   '-DBINDIR="@0@"'.format(get_option('prefix') / get_option('bindir')),
@@ -171,7 +169,6 @@ extra_cflags += [
   '-DLOCALSTATEDIR="@0@"'.format(get_option('prefix') / get_option('localstatedir')),
   '-DSBINDIR="@0@"'.format(get_option('prefix') / get_option('sbindir')),
   '-DSYSCONFDIR="@0@"'.format(get_option('prefix') / get_option('sysconfdir')),
-  '-DHAVE_XFCE_REVISION_H=1',
 ]
 
 add_project_arguments(cc.get_supported_arguments(extra_cflags_check), language: 'c')

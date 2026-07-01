@@ -1,25 +1,25 @@
-libparoledbus_sources = [
-  'parole-dbus.c',
-  'parole-dbus.h',
+librespitedbus_sources = [
+  'respite-dbus.c',
+  'respite-dbus.h',
 ]
 
-libparoledbus_deps = [
+librespitedbus_deps = [
   dbus,
   dbus_glib,
   glib,
 ]
 
-libparoledbus = static_library(
-  'paroledbus',
-  libparoledbus_sources,
+librespitedbus = static_library(
+  'respitedbus',
+  librespitedbus_sources,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format('paroledbus'),
+    '-DG_LOG_DOMAIN="@0@"'.format('respitedbus'),
   ],
-  dependencies: libparoledbus_deps,
+  dependencies: librespitedbus_deps,
   install: false,
 )
 
-libparoledbus_dep = declare_dependency(
-  dependencies: libparoledbus_deps,
-  link_with: libparoledbus,
+librespitedbus_dep = declare_dependency(
+  dependencies: librespitedbus_deps,
+  link_with: librespitedbus,
 )

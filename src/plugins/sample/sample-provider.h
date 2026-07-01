@@ -23,7 +23,7 @@
 #ifndef SRC_PLUGINS_SAMPLE_SAMPLE_PROVIDER_H_
 #define SRC_PLUGINS_SAMPLE_SAMPLE_PROVIDER_H_
 
-#include "src/misc/parole.h"
+#include "src/misc/respite.h"
 
 G_BEGIN_DECLS
 
@@ -39,7 +39,7 @@ typedef struct _SampleProvider      SampleProvider;
 
 GType sample_provider_get_type           (void) G_GNUC_CONST G_GNUC_INTERNAL;
 
-void  sample_provider_register_type      (ParoleProviderPlugin *plugin);
+void  sample_provider_register_type      (RespiteProviderPlugin *plugin);
 
 G_END_DECLS
 

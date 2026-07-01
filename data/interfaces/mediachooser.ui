@@ -13,9 +13,9 @@
     <property name="modal">True</property>
     <property name="default_width">640</property>
     <property name="default_height">480</property>
-    <property name="icon_name">org.xfce.parole</property>
+    <property name="icon_name">org.gnome.Respite</property>
     <property name="type_hint">dialog</property>
-    <signal name="destroy" handler="parole_media_chooser_destroy_cb" swapped="no"/>
+    <signal name="destroy" handler="respite_media_chooser_destroy_cb" swapped="no"/>
     <child type="titlebar">
       <object class="GtkHeaderBar" id="titlebar">
         <property name="visible">True</property>
@@ -28,7 +28,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <signal name="clicked" handler="parole_media_chooser_close_clicked" swapped="no"/>
+            <signal name="clicked" handler="respite_media_chooser_close_clicked" swapped="no"/>
           </object>
         </child>
         <child>
@@ -39,7 +39,7 @@
             <property name="can_default">True</property>
             <property name="has_default">True</property>
             <property name="receives_default">True</property>
-            <signal name="clicked" handler="parole_media_chooser_add_clicked" swapped="no"/>
+            <signal name="clicked" handler="respite_media_chooser_add_clicked" swapped="no"/>
             <style>
               <class name="suggested-action"/>
             </style>

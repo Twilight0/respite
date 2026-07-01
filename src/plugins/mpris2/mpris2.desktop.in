@@ -1,6 +1,6 @@
-[Parole Plugin]
-Module=parole-mpris2
+[Respite Plugin]
+Module=respite-mpris2
 Name=MPRIS2
 Description=MPRIS2 remote control
 Authors=Matias De Lellis <mati86dl@gmail.com>, Hakan Erduman <smultimeter@gmail.com>
-Website=https://docs.xfce.org/apps/parole/start
+Website=https://github.com/Twilight0/respite

@@ -25,9 +25,9 @@
 #ifndef SRC_PLUGINS_MPRIS2_MPRIS2_PROVIDER_H_
 #define SRC_PLUGINS_MPRIS2_MPRIS2_PROVIDER_H_
 
-#include "src/misc/parole.h"
+#include "src/misc/respite.h"
 
-#include "src/parole-conf.h"
+#include "src/respite-conf.h"
 
 G_BEGIN_DECLS
 
@@ -43,7 +43,7 @@ typedef struct _Mpris2Provider      Mpris2Provider;
 
 GType mpris2_provider_get_type      (void) G_GNUC_CONST G_GNUC_INTERNAL;
 
-void  mpris2_provider_register_type (ParoleProviderPlugin *plugin);
+void  mpris2_provider_register_type (RespiteProviderPlugin *plugin);
 
 G_END_DECLS
 

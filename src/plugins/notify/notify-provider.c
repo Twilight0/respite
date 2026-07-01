@@ -25,11 +25,11 @@
 
 #include <libnotify/notify.h>
 
-#include "src/misc/parole.h"
+#include "src/misc/respite.h"
 
 #include "src/plugins/notify/notify-provider.h"
 
-static void   notify_provider_iface_init(ParoleProviderPluginIface *iface);
+static void   notify_provider_iface_init(RespiteProviderPluginIface *iface);
 static void   notify_provider_finalize(GObject                   *object);
 
 
@@ -39,16 +39,16 @@ struct _NotifyProviderClass {
 
 struct _NotifyProvider {
     GObject                 parent;
-    ParoleProviderPlayer   *player;
+    RespiteProviderPlayer   *player;
     gchar                  *last_played_uri;
 
     NotifyNotification     *notification;
 };
 
-PAROLE_DEFINE_TYPE_WITH_CODE(NotifyProvider,
+RESPITE_DEFINE_TYPE_WITH_CODE(NotifyProvider,
                              notify_provider,
                              G_TYPE_OBJECT,
-                             PAROLE_IMPLEMENT_INTERFACE(PAROLE_TYPE_PROVIDER_PLUGIN,
+                             RESPITE_IMPLEMENT_INTERFACE(RESPITE_TYPE_PROVIDER_PLUGIN,
                              notify_provider_iface_init));
 
 static void
@@ -71,21 +71,21 @@ close_notification(NotifyProvider *notify) {
 
 static void
 on_previous_clicked(NotifyNotification *notification, char *action, NotifyProvider *notify) {
-    parole_provider_player_play_previous(notify->player);
+    respite_provider_player_play_previous(notify->player);
 }
 
 static void
 on_next_clicked(NotifyNotification *notification, char *action, NotifyProvider *notify) {
-    parole_provider_player_play_next(notify->player);
+    respite_provider_player_play_next(notify->player);
 }
 
 static void
-notify_playing(NotifyProvider *notify, const ParoleStream *stream) {
+notify_playing(NotifyProvider *notify, const RespiteStream *stream) {
     GdkPixbuf *pix;
     gboolean has_video, enabled;
     gchar *title, *album, *artist, *year, *stream_uri;
     gchar *message;
-    ParoleMediaType media_type;
+    RespiteMediaType media_type;
     GSimpleAction *action;
 
     g_object_get(G_OBJECT(stream),
@@ -150,7 +150,7 @@ notify_playing(NotifyProvider *notify, const ParoleStream *stream) {
                                         GTK_ICON_LOOKUP_USE_BUILTIN,
                                         NULL);
     else
-        pix  = parole_stream_get_image(G_OBJECT(stream));
+        pix  = respite_stream_get_image(G_OBJECT(stream));
 
     if (!pix)
         pix = gtk_icon_theme_load_icon(gtk_icon_theme_get_default(),
@@ -167,7 +167,7 @@ notify_playing(NotifyProvider *notify, const ParoleStream *stream) {
     notify_notification_set_timeout(notify->notification, 5000);
 
     /* Only show Previous Track item if clicking previous is possible */
-    action = parole_provider_player_get_action(PAROLE_PROVIDER_PLAYER(notify->player), PAROLE_PLAYER_ACTION_PREVIOUS);
+    action = respite_provider_player_get_action(RESPITE_PROVIDER_PLAYER(notify->player), RESPITE_PLAYER_ACTION_PREVIOUS);
     g_object_get(G_OBJECT(action),
                   "enabled", &enabled,
                   NULL);
@@ -179,7 +179,7 @@ notify_playing(NotifyProvider *notify, const ParoleStream *stream) {
     }
 
     /* Only show Next Track item if clicking next is possible */
-    action = parole_provider_player_get_action(PAROLE_PROVIDER_PLAYER(notify->player), PAROLE_PLAYER_ACTION_NEXT);
+    action = respite_provider_player_get_action(RESPITE_PROVIDER_PLAYER(notify->player), RESPITE_PLAYER_ACTION_NEXT);
     g_object_get(G_OBJECT(action),
                   "enabled", &enabled,
                   NULL);
@@ -196,7 +196,7 @@ notify_playing(NotifyProvider *notify, const ParoleStream *stream) {
 }
 
 static void
-state_changed_cb(ParoleProviderPlayer *player, const ParoleStream *stream, ParoleState state, NotifyProvider *notify) {
+state_changed_cb(RespiteProviderPlayer *player, const RespiteStream *stream, RespiteState state, NotifyProvider *notify) {
     if ( state == PAROLE_STATE_PLAYING )
         notify_playing(notify, stream);
 
@@ -204,12 +204,12 @@ state_changed_cb(ParoleProviderPlayer *player, const ParoleStream *stream, Parol
         close_notification(notify);
 }
 
-static gboolean notify_provider_is_configurable(ParoleProviderPlugin *plugin) {
+static gboolean notify_provider_is_configurable(RespiteProviderPlugin *plugin) {
     return FALSE;
 }
 
 static void
-notify_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *player) {
+notify_provider_set_player(RespiteProviderPlugin *plugin, RespiteProviderPlayer *player) {
     NotifyProvider *notify;
 
     notify = NOTIFY_PROVIDER(plugin);
@@ -217,14 +217,14 @@ notify_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *p
     notify->player = player;
 
     notify->notification = NULL;
-    notify_init("parole-notify");
+    notify_init("respite-notify");
 
     g_signal_connect(player, "state-changed",
                       G_CALLBACK(state_changed_cb), notify);
 }
 
 static void
-notify_provider_iface_init(ParoleProviderPluginIface *iface) {
+notify_provider_iface_init(RespiteProviderPluginIface *iface) {
     iface->get_is_configurable = notify_provider_is_configurable;
     iface->set_player = notify_provider_set_player;
 }

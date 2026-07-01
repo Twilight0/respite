@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="respite">
+  <enum id="org.gnome.Respite.AspectRatio">
+    <value nick="auto" value="0"/>
+    <value nick="16-9" value="1"/>
+    <value nick="4-3" value="2"/>
+    <value nick="1-1" value="3"/>
+    <value nick="239-100" value="4"/>
+    <value nick="dvd" value="5"/>
+  </enum>
+
+  <schema id="org.gnome.Respite" path="/org/gnome/respite/">
+    <!-- Audio -->
+    <key name="vis-enabled" type="b">
+      <default>false</default>
+      <summary>Enable visualization</summary>
+    </key>
+    <key name="vis-name" type="s">
+      <default>'none'</default>
+      <summary>Visualization name</summary>
+    </key>
+    <key name="volume" type="i">
+      <default>50</default>
+      <range min="0" max="100"/>
+      <summary>Volume level</summary>
+    </key>
+
+    <!-- Folders -->
+    <key name="media-chooser-folder" type="s">
+      <default>'none'</default>
+      <summary>Last used media folder</summary>
+    </key>
+
+    <!-- General -->
+    <key name="multimedia-keys" type="b">
+      <default>true</default>
+      <summary>Enable multimedia keys</summary>
+    </key>
+    <key name="plugins" type="s">
+      <default>'none'</default>
+      <summary>Enabled plugins</summary>
+    </key>
+    <key name="scan-recursive" type="b">
+      <default>true</default>
+      <summary>Scan folders recursively</summary>
+    </key>
+
+    <!-- Playlist -->
+    <key name="remember-playlist" type="b">
+      <default>false</default>
+      <summary>Remember playlist</summary>
+    </key>
+    <key name="remove-duplicated" type="b">
+      <default>false</default>
+      <summary>Remove duplicate entries</summary>
+    </key>
+    <key name="repeat" type="b">
+      <default>false</default>
+      <summary>Repeat playlist</summary>
+    </key>
+    <key name="replace-playlist" type="b">
+      <default>false</default>
+      <summary>Replace playlist</summary>
+    </key>
+    <key name="shuffle" type="b">
+      <default>false</default>
+      <summary>Shuffle playlist</summary>
+    </key>
+    <key name="play-opened-files" type="b">
+      <default>true</default>
+      <summary>Play opened files</summary>
+    </key>
+
+    <!-- Subtitles -->
+    <key name="enable-subtitle" type="b">
+      <default>true</default>
+      <summary>Enable subtitles</summary>
+    </key>
+    <key name="subtitle-encoding" type="s">
+      <default>'UTF-8'</default>
+      <summary>Subtitle encoding</summary>
+    </key>
+    <key name="subtitle-font" type="s">
+      <default>'Sans Bold 20'</default>
+      <summary>Subtitle font</summary>
+    </key>
+
+    <!-- Video -->
+    <key name="videosink" type="s">
+      <default>'autoimagesink'</default>
+      <summary>Video sink</summary>
+    </key>
+    <key name="aspect-ratio" enum="org.gnome.Respite.AspectRatio">
+      <default>'auto'</default>
+      <summary>Aspect ratio</summary>
+    </key>
+    <key name="brightness" type="i">
+      <default>0</default>
+      <range min="-1000" max="1000"/>
+      <summary>Brightness</summary>
+    </key>
+    <key name="contrast" type="i">
+      <default>0</default>
+      <range min="-1000" max="1000"/>
+      <summary>Contrast</summary>
+    </key>
+    <key name="reset-saver" type="b">
+      <default>true</default>
+      <summary>Disable screensaver during playback</summary>
+    </key>
+    <key name="hue" type="i">
+      <default>0</default>
+      <range min="-1000" max="1000"/>
+      <summary>Hue</summary>
+    </key>
+    <key name="saturation" type="i">
+      <default>0</default>
+      <range min="-1000" max="1000"/>
+      <summary>Saturation</summary>
+    </key>
+
+    <!-- Window -->
+    <key name="window-height" type="i">
+      <default>420</default>
+      <range min="1" max="32767"/>
+      <summary>Window height</summary>
+    </key>
+    <key name="minimized" type="b">
+      <default>false</default>
+      <summary>Window minimized</summary>
+    </key>
+    <key name="window-maximized" type="b">
+      <default>false</default>
+      <summary>Window maximized</summary>
+    </key>
+    <key name="window-width" type="i">
+      <default>760</default>
+      <range min="1" max="32767"/>
+      <summary>Window width</summary>
+    </key>
+
+    <!-- UI -->
+    <key name="hide-controls-timeout" type="i">
+      <default>2</default>
+      <range min="1" max="32767"/>
+      <summary>Controls hide timeout</summary>
+    </key>
+    <key name="always-hide-menubar" type="b">
+      <default>false</default>
+      <summary>Always hide menubar</summary>
+    </key>
+  </schema>
+
+  <schema id="org.gnome.Respite.Plugins" path="/org/gnome/respite/plugins/">
+    <key name="minimize-to-tray" type="b">
+      <default>true</default>
+      <summary>Minimize to tray</summary>
+    </key>
+    <key name="remember-quit-action" type="b">
+      <default>false</default>
+      <summary>Remember quit action</summary>
+    </key>
+  </schema>
+</schemalist>

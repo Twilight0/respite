@@ -20,7 +20,7 @@
     <property name="model">liststore</property>
     <property name="active">1</property>
     <property name="id_column">1</property>
-    <signal name="changed" handler="parole_media_list_format_combo_changed_cb" swapped="no"/>
+    <signal name="changed" handler="respite_media_list_format_combo_changed_cb" swapped="no"/>
     <child>
       <object class="GtkCellRendererText" id="playlist_renderer"/>
       <attributes>
@@ -34,7 +34,7 @@
     <property name="title" translatable="yes">Save Playlist as...</property>
     <property name="role">GtkFileChooserDialog</property>
     <property name="window_position">center-on-parent</property>
-    <property name="icon_name">org.xfce.parole</property>
+    <property name="icon_name">org.gnome.Respite</property>
     <property name="type_hint">dialog</property>
     <property name="action">save</property>
     <property name="do_overwrite_confirmation">True</property>

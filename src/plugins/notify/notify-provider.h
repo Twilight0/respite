@@ -23,7 +23,7 @@
 #ifndef SRC_PLUGINS_NOTIFY_NOTIFY_PROVIDER_H_
 #define SRC_PLUGINS_NOTIFY_NOTIFY_PROVIDER_H_
 
-#include "src/misc/parole.h"
+#include "src/misc/respite.h"
 
 G_BEGIN_DECLS
 
@@ -39,7 +39,7 @@ typedef struct _NotifyProvider      NotifyProvider;
 
 GType notify_provider_get_type           (void) G_GNUC_CONST G_GNUC_INTERNAL;
 
-void  notify_provider_register_type (ParoleProviderPlugin *provider);
+void  notify_provider_register_type (RespiteProviderPlugin *provider);
 
 G_END_DECLS
 

@@ -2,7 +2,7 @@ tray_icon_sources = [
   'tray-plugin.c',
   'tray-provider.c',
   'tray-provider.h',
-  parole_h,
+  respite_h,
 ]
 
 shared_module(
@@ -19,13 +19,11 @@ shared_module(
   dependencies: [
     glib,
     gtk,
-    libparole_dep,
-    libxfce4ui,
-    libxfce4util,
-    xfconf,
+    xapp,
+    librespite_dep,
   ],
   install: true,
-  install_dir: get_option('prefix') / get_option('libdir') / 'parole-0',
+  install_dir: get_option('prefix') / get_option('libdir') / 'respite-0',
 )
 
 i18n.merge_file(
@@ -34,5 +32,5 @@ i18n.merge_file(
   po_dir: '..' / '..' / '..' / 'po',
   type: 'desktop',
   install: true,
-  install_dir: pkgdatadir / 'parole-plugins-0',
+  install_dir: pkgdatadir / 'respite-plugins-0',
 )

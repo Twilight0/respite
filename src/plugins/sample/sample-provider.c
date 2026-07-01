@@ -22,7 +22,7 @@
 
 #include "src/plugins/sample/sample-provider.h"
 
-static void   sample_provider_iface_init(ParoleProviderPluginIface *iface);
+static void   sample_provider_iface_init(RespiteProviderPluginIface *iface);
 static void   sample_provider_finalize(GObject                     *object);
 
 
@@ -32,21 +32,21 @@ struct _SampleProviderClass {
 
 struct _SampleProvider {
     GObject                 parent;
-    ParoleProviderPlayer   *player;
+    RespiteProviderPlayer   *player;
 };
 
-PAROLE_DEFINE_TYPE_WITH_CODE(SampleProvider,
+RESPITE_DEFINE_TYPE_WITH_CODE(SampleProvider,
                              sample_provider,
                              G_TYPE_OBJECT,
-                             PAROLE_IMPLEMENT_INTERFACE(PAROLE_TYPE_PROVIDER_PLUGIN,
+                             RESPITE_IMPLEMENT_INTERFACE(RESPITE_TYPE_PROVIDER_PLUGIN,
                              sample_provider_iface_init));
 
-static gboolean sample_provider_is_configurable(ParoleProviderPlugin *plugin) {
+static gboolean sample_provider_is_configurable(RespiteProviderPlugin *plugin) {
     return FALSE;
 }
 
 static void
-sample_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *player) {
+sample_provider_set_player(RespiteProviderPlugin *plugin, RespiteProviderPlayer *player) {
     SampleProvider *provider;
     provider = SAMPLE_PROVIDER(plugin);
 
@@ -54,7 +54,7 @@ sample_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *p
 }
 
 static void
-sample_provider_iface_init(ParoleProviderPluginIface *iface) {
+sample_provider_iface_init(RespiteProviderPluginIface *iface) {
     iface->get_is_configurable = sample_provider_is_configurable;
     iface->set_player = sample_provider_set_player;
 }

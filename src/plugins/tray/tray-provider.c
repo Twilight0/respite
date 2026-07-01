@@ -22,16 +22,14 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <gio/gio.h>
+#include <libxapp/xapp-status-icon.h>
 
-#include <libxfce4util/libxfce4util.h>
-#include <libxfce4ui/libxfce4ui.h>
-#include <xfconf/xfconf.h>
-
-#include "src/misc/parole.h"
+#include "src/misc/respite.h"
 
 #include "src/plugins/tray/tray-provider.h"
 
-static void   tray_provider_iface_init(ParoleProviderPluginIface *iface);
+static void   tray_provider_iface_init(RespiteProviderPluginIface *iface);
 static void   tray_provider_finalize(GObject                   *object);
 
 
@@ -41,31 +39,26 @@ struct _TrayProviderClass {
 
 struct _TrayProvider {
     GObject                 parent;
-    ParoleProviderPlayer   *player;
-    GtkStatusIcon          *tray;
+    RespiteProviderPlayer   *player;
+    XAppStatusIcon         *tray;
     GtkWidget              *window;
     gulong                  sig;
 
-    ParoleState             state;
+    RespiteState             state;
     GtkWidget              *menu;
 };
 
-PAROLE_DEFINE_TYPE_WITH_CODE(TrayProvider,
+RESPITE_DEFINE_TYPE_WITH_CODE(TrayProvider,
                                 tray_provider,
                                 G_TYPE_OBJECT,
-                                PAROLE_IMPLEMENT_INTERFACE(PAROLE_TYPE_PROVIDER_PLUGIN,
+                                RESPITE_IMPLEMENT_INTERFACE(RESPITE_TYPE_PROVIDER_PLUGIN,
                                 tray_provider_iface_init));
-
-static void
-menu_selection_done_cb(TrayProvider *tray) {
-    g_clear_pointer(&tray->menu, gtk_widget_destroy);
-}
 
 static void
 exit_activated_cb(TrayProvider *tray) {
     GdkEventAny ev;
 
-    menu_selection_done_cb(tray);
+    g_clear_pointer(&tray->menu, gtk_widget_destroy);
 
     ev.type = GDK_DELETE;
     ev.window = gtk_widget_get_window(tray->window);
@@ -78,113 +71,82 @@ exit_activated_cb(TrayProvider *tray) {
 static void
 toggle_pause(TrayProvider *tray) {
     if ( tray->state == PAROLE_STATE_PLAYING )
-        parole_provider_player_pause(tray->player);
+        respite_provider_player_pause(tray->player);
     else if ( tray->state == PAROLE_STATE_PAUSED )
-        parole_provider_player_resume(tray->player);
+        respite_provider_player_resume(tray->player);
 }
 
 static void
 play_pause_activated_cb(TrayProvider *tray) {
-    menu_selection_done_cb(tray);
+    g_clear_pointer(&tray->menu, gtk_widget_destroy);
     toggle_pause(tray);
 }
 
 static void
 previous_activated_cb(TrayProvider *tray) {
-    menu_selection_done_cb(tray);
-    parole_provider_player_play_previous(tray->player);
+    g_clear_pointer(&tray->menu, gtk_widget_destroy);
+    respite_provider_player_play_previous(tray->player);
 }
 
 static void
 next_activated_cb(TrayProvider *tray) {
-    menu_selection_done_cb(tray);
-    parole_provider_player_play_next(tray->player);
+    g_clear_pointer(&tray->menu, gtk_widget_destroy);
+    respite_provider_player_play_next(tray->player);
 }
 
 static void
 open_activated_cb(TrayProvider *tray) {
-    parole_provider_player_open_media_chooser(tray->player);
+    respite_provider_player_open_media_chooser(tray->player);
 }
 
-static void
-popup_menu_cb(GtkStatusIcon *icon, guint button, guint activate_time, TrayProvider *tray) {
+static GtkWidget *
+build_tray_menu(TrayProvider *tray) {
     GtkWidget *menu, *mi;
 
     menu = gtk_menu_new();
 
-    /*
-     * Play pause
-     */
     mi = gtk_menu_item_new_with_mnemonic(tray->state == PAROLE_STATE_PLAYING ? _("_Pause") : _("_Play"));
     gtk_widget_set_sensitive(mi, TRUE);
     gtk_widget_show(mi);
     g_signal_connect_swapped(mi, "activate", G_CALLBACK(play_pause_activated_cb), tray);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
 
-    /*
-     * Previous Track
-     */
     mi = gtk_menu_item_new_with_mnemonic(_("P_revious Track"));
     gtk_widget_set_sensitive(mi, TRUE);
     gtk_widget_show(mi);
     g_signal_connect_swapped(mi, "activate", G_CALLBACK(previous_activated_cb), tray);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
 
-    /*
-     * Next Track
-     */
     mi = gtk_menu_item_new_with_mnemonic(_("_Next Track"));
     gtk_widget_set_sensitive(mi, TRUE);
     gtk_widget_show(mi);
     g_signal_connect_swapped(mi, "activate", G_CALLBACK(next_activated_cb), tray);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
 
-    /*
-     * Separator
-     */
     mi = gtk_separator_menu_item_new();
     gtk_widget_show(mi);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
 
-    /*
-     * Open
-     */
     mi = gtk_menu_item_new_with_mnemonic(_("_Open"));
     gtk_widget_show(mi);
     g_signal_connect_swapped(mi, "activate", G_CALLBACK(open_activated_cb), tray);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
 
-    /*
-     * Separator.
-     */
     mi = gtk_separator_menu_item_new();
     gtk_widget_show(mi);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
 
-    /*
-     * Exit
-     */
     mi = gtk_menu_item_new_with_mnemonic(_("_Quit"));
     gtk_widget_set_sensitive(mi, TRUE);
     gtk_widget_show(mi);
     g_signal_connect_swapped(mi, "activate", G_CALLBACK(exit_activated_cb), tray);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
 
-    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-    gtk_menu_popup(GTK_MENU(menu), NULL, NULL,
-                    gtk_status_icon_position_menu,
-                    icon, button, activate_time);
-    G_GNUC_END_IGNORE_DEPRECATIONS
-
-    g_signal_connect_swapped(menu, "selection-done",
-                  G_CALLBACK(menu_selection_done_cb), tray);
-
-    tray->menu = menu;
+    return menu;
 }
 
 static void
-tray_activate_cb(GtkStatusIcon *tray_icon, TrayProvider *tray) {
-    /* Show the window if it is hidden or does not have focus */
+tray_activate_cb(XAppStatusIcon *icon, TrayProvider *tray) {
     if (!gtk_widget_get_visible(tray->window) || !gtk_window_is_active(GTK_WINDOW(tray->window)))
         gtk_window_present(GTK_WINDOW(tray->window));
     else
@@ -192,54 +154,42 @@ tray_activate_cb(GtkStatusIcon *tray_icon, TrayProvider *tray) {
 }
 
 static void
-state_changed_cb(ParoleProviderPlayer *player, const ParoleStream *stream, ParoleState state, TrayProvider *tray) {
+state_changed_cb(RespiteProviderPlayer *player, const RespiteStream *stream, RespiteState state, TrayProvider *tray) {
     tray->state = state;
 
     if ( tray->menu ) {
         g_clear_pointer(&tray->menu, gtk_widget_destroy);
-        g_signal_emit_by_name(G_OBJECT(tray->tray), "popup-menu", 0, gtk_get_current_event_time());
+        tray->menu = build_tray_menu(tray);
+        xapp_status_icon_set_primary_menu(tray->tray, GTK_MENU(tray->menu));
     }
 }
 
 static void
-icon_theme_changed_cb (GtkIconTheme *icon_theme, TrayProvider *tray)
-{
-    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-    gtk_status_icon_set_from_icon_name(tray->tray, "org.xfce.parole");
-    G_GNUC_END_IGNORE_DEPRECATIONS
+icon_theme_changed_cb (GtkIconTheme *icon_theme, TrayProvider *tray) {
+    xapp_status_icon_set_icon_name(tray->tray, "org.gnome.Respite");
 }
 
 static gboolean
 read_entry_bool(const gchar *entry, gboolean fallback) {
-    XfconfChannel *channel;
-    gboolean ret_val = fallback;
-    gchar prop_name[64];
-    GValue src = { 0, };
+    GSettings *settings;
+    gboolean ret_val;
 
-    channel = xfconf_channel_get("parole");
-    g_snprintf (prop_name, sizeof (prop_name), "/plugins/tray/%s", entry);
+    settings = g_settings_new("org.gnome.Respite.Plugins");
+    ret_val = g_settings_get_boolean(settings, entry);
 
-    g_value_init(&src, G_TYPE_BOOLEAN);
-
-    if (xfconf_channel_get_property (channel, prop_name, &src))
-        ret_val = g_value_get_boolean(&src);
+    g_object_unref(settings);
 
     return ret_val;
 }
 
 static void
 write_entry_bool(const gchar *entry, gboolean value) {
-    XfconfChannel *channel;
-    gchar prop_name[64];
-    GValue dst = { 0, };
+    GSettings *settings;
 
-    channel = xfconf_channel_get("parole");
-    g_snprintf (prop_name, sizeof (prop_name), "/plugins/tray/%s", entry);
+    settings = g_settings_new("org.gnome.Respite.Plugins");
+    g_settings_set_boolean(settings, entry, value);
 
-    g_value_init(&dst, G_TYPE_BOOLEAN);
-    g_value_set_boolean(&dst, value);
-
-    xfconf_channel_set_property(channel, prop_name, &dst);
+    g_object_unref(settings);
 }
 
 static void
@@ -291,7 +241,7 @@ action_on_hide_confirmed_cb(GtkWidget *widget, gpointer data) {
 }
 
 static gboolean
-button_press_event_cb(GtkWidget *widget, GdkEventButton *event, TrayProvider *tray) {
+button_press_event_cb(XAppStatusIcon *icon, GdkEventButton *event, TrayProvider *tray) {
     if (event->button == GDK_BUTTON_MIDDLE)
       toggle_pause(tray);
 
@@ -299,15 +249,15 @@ button_press_event_cb(GtkWidget *widget, GdkEventButton *event, TrayProvider *tr
 }
 
 static gboolean
-scroll_event_cb(GtkWidget *widget, GdkEventScroll *event, TrayProvider *tray) {
+scroll_event_cb(XAppStatusIcon *icon, GdkEventScroll *event, TrayProvider *tray) {
     switch (event->direction) {
         case GDK_SCROLL_DOWN:
         case GDK_SCROLL_LEFT:
-            parole_provider_player_volume_down(tray->player);
+            respite_provider_player_volume_down(tray->player);
             break;
         case GDK_SCROLL_UP:
         case GDK_SCROLL_RIGHT:
-            parole_provider_player_volume_up(tray->player);
+            respite_provider_player_volume_up(tray->player);
             break;
         default:
             break;
@@ -339,7 +289,7 @@ delete_event_cb(GtkWidget *widget, GdkEvent *ev, TrayProvider *tray) {
     g_free(markup);
 
     gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(dialog),
-            _("Parole can be minimized to the system tray instead."));
+            _("Respite can be minimized to the system tray instead."));
 
     minimize = gtk_dialog_add_button(GTK_DIALOG(dialog),
                                      _("Minimize to tray"),
@@ -402,12 +352,12 @@ delete_event_cb(GtkWidget *widget, GdkEvent *ev, TrayProvider *tray) {
     return ret_val;
 }
 
-static gboolean tray_provider_is_configurable(ParoleProviderPlugin *plugin) {
+static gboolean tray_provider_is_configurable(RespiteProviderPlugin *plugin) {
     return TRUE;
 }
 
 static void
-tray_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *player) {
+tray_provider_set_player(RespiteProviderPlugin *plugin, RespiteProviderPlayer *player) {
     TrayProvider *tray;
 
     tray = TRAY_PROVIDER(plugin);
@@ -416,17 +366,14 @@ tray_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *pla
 
     tray->state = PAROLE_STATE_STOPPED;
 
-    tray->window = parole_provider_player_get_main_window(player);
+    tray->window = respite_provider_player_get_main_window(player);
 
-    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-    tray->tray = gtk_status_icon_new_from_icon_name("org.xfce.parole");
-    G_GNUC_END_IGNORE_DEPRECATIONS
+    tray->tray = xapp_status_icon_new_with_name("respite");
+    xapp_status_icon_set_icon_name(tray->tray, "org.gnome.Respite");
+    xapp_status_icon_set_tooltip_text(tray->tray, _("Respite Media Player"));
 
-    tray->player = player;
-    tray->menu = NULL;
-
-    g_signal_connect(tray->tray, "popup-menu",
-              G_CALLBACK(popup_menu_cb), tray);
+    tray->menu = build_tray_menu(tray);
+    xapp_status_icon_set_primary_menu(tray->tray, GTK_MENU(tray->menu));
 
     g_signal_connect(tray->tray, "activate",
               G_CALLBACK(tray_activate_cb), tray);
@@ -448,14 +395,14 @@ tray_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *pla
 }
 
 static void
-tray_provider_configure(ParoleProviderPlugin *provider, GtkWidget *parent) {
+tray_provider_configure(RespiteProviderPlugin *provider, GtkWidget *parent) {
     TrayProvider *tray;
     tray = TRAY_PROVIDER(provider);
     configure_plugin(tray, parent);
 }
 
 static void
-tray_provider_iface_init(ParoleProviderPluginIface *iface) {
+tray_provider_iface_init(RespiteProviderPluginIface *iface) {
     iface->set_player = tray_provider_set_player;
     iface->configure = tray_provider_configure;
     iface->get_is_configurable = tray_provider_is_configurable;
@@ -476,7 +423,8 @@ static void tray_provider_finalize(GObject *object) {
 
     tray = TRAY_PROVIDER(object);
 
-    g_object_unref(G_OBJECT(tray->tray));
+    g_clear_pointer(&tray->menu, gtk_widget_destroy);
+    g_clear_object(&tray->tray);
 
     G_OBJECT_CLASS(tray_provider_parent_class)->finalize(object);
 }

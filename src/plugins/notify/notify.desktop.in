@@ -1,6 +1,6 @@
-[Parole Plugin]
-Module=parole-notify
+[Respite Plugin]
+Module=respite-notify
 Name=Notify
 Description=Show notifications for currently playing tracks
 Authors=Sean Davis <bluesabre@xfce.org>
-Website=https://docs.xfce.org/apps/parole/start
+Website=https://github.com/Twilight0/respite

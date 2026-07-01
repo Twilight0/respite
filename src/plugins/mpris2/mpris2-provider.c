@@ -23,10 +23,11 @@
  */
 
 #include <gst/tag/tag.h>
+#include <glib/gi18n.h>
 
 #include "src/plugins/mpris2/mpris2-provider.h"
 
-static void   mpris2_provider_iface_init(ParoleProviderPluginIface *iface);
+static void   mpris2_provider_iface_init(RespiteProviderPluginIface *iface);
 static void   mpris2_provider_finalize(GObject                   *object);
 
 #define MPRIS_NAME "org.mpris.MediaPlayer2.parole"
@@ -38,8 +39,8 @@ struct _Mpris2ProviderClass {
 
 struct _Mpris2Provider {
     GObject                 parent;
-    ParoleProviderPlayer   *player;
-    ParoleConf             *conf;
+    RespiteProviderPlayer   *player;
+    RespiteConf             *conf;
 
     guint                   owner_id;
     guint                   registration_id0;
@@ -53,15 +54,15 @@ struct _Mpris2Provider {
     gboolean                saved_fullscreen;
     gchar                  *saved_title;
     gdouble                 volume;
-    ParoleState             state;
+    RespiteState             state;
 
     gulong                  window_state_changed;
 };
 
-PAROLE_DEFINE_TYPE_WITH_CODE(Mpris2Provider,
+RESPITE_DEFINE_TYPE_WITH_CODE(Mpris2Provider,
                                 mpris2_provider,
                                 G_TYPE_OBJECT,
-                                PAROLE_IMPLEMENT_INTERFACE(PAROLE_TYPE_PROVIDER_PLUGIN,
+                                RESPITE_IMPLEMENT_INTERFACE(RESPITE_TYPE_PROVIDER_PLUGIN,
                                 mpris2_provider_iface_init));
 
 static const gchar mpris2xml[] =
@@ -133,7 +134,7 @@ static const gchar mpris2xml[] =
  * org.mpris.MediaPlayer2
  */
 static void mpris_Root_Raise(GDBusMethodInvocation *invocation, GVariant* parameters, Mpris2Provider *provider) {
-    GtkWidget *widget = parole_provider_player_get_main_window(provider->player);
+    GtkWidget *widget = respite_provider_player_get_main_window(provider->player);
     if (widget) {
         GdkWindow *window = gtk_widget_get_window(widget);
         if (window) {
@@ -164,7 +165,7 @@ static GVariant* mpris_Root_get_Fullscreen(GError **error, Mpris2Provider *provi
 static void mpris_Root_put_Fullscreen(GVariant *value, GError **error, Mpris2Provider *provider) {
     gboolean fullscreen = g_variant_get_boolean(value);
 
-    GtkWidget *window = parole_provider_player_get_main_window(provider->player);
+    GtkWidget *window = respite_provider_player_get_main_window(provider->player);
     if (window) {
         if (fullscreen)
             gtk_window_fullscreen(GTK_WINDOW(window));
@@ -182,7 +183,7 @@ static GVariant* mpris_Root_get_HasTrackList(GError **error, Mpris2Provider *pro
 }
 
 static GVariant* mpris_Root_get_Identity(GError **error, Mpris2Provider *provider) {
-    return g_variant_new_string(_("Parole Media Player"));
+    return g_variant_new_string(_("Respite Media Player"));
 }
 
 static GVariant* mpris_Root_get_DesktopEntry(GError **error, Mpris2Provider *provider) {
@@ -236,17 +237,17 @@ static GVariant* mpris_Root_get_SupportedMimeTypes(GError **error, Mpris2Provide
  * org.mpris.MediaPlayer2.Player
  */
 static void mpris_Player_Play(GDBusMethodInvocation *invocation, GVariant* parameters, Mpris2Provider *provider) {
-    ParoleProviderPlayer *player = provider->player;
-    ParoleState state = parole_provider_player_get_state(player);
+    RespiteProviderPlayer *player = provider->player;
+    RespiteState state = respite_provider_player_get_state(player);
 
     switch (state) {
         case PAROLE_STATE_PAUSED:
-            parole_provider_player_resume(provider->player);
+            respite_provider_player_resume(provider->player);
             break;
 
         case PAROLE_STATE_STOPPED:
         case PAROLE_STATE_PLAYBACK_FINISHED:
-            parole_provider_player_play_next(provider->player);
+            respite_provider_player_play_next(provider->player);
             break;
 
         case PAROLE_STATE_ABOUT_TO_FINISH:
@@ -259,40 +260,40 @@ static void mpris_Player_Play(GDBusMethodInvocation *invocation, GVariant* param
 }
 
 static void mpris_Player_Next(GDBusMethodInvocation *invocation, GVariant* parameters, Mpris2Provider *provider) {
-    parole_provider_player_play_next(provider->player);
+    respite_provider_player_play_next(provider->player);
 
     g_dbus_method_invocation_return_value(invocation, NULL);
 }
 
 static void mpris_Player_Previous(GDBusMethodInvocation *invocation, GVariant* parameters, Mpris2Provider *provider) {
-    parole_provider_player_play_previous(provider->player);
+    respite_provider_player_play_previous(provider->player);
 
     g_dbus_method_invocation_return_value(invocation, NULL);
 }
 
 static void mpris_Player_Pause(GDBusMethodInvocation *invocation, GVariant* parameters, Mpris2Provider *provider) {
-    parole_provider_player_pause(provider->player);
+    respite_provider_player_pause(provider->player);
 
     g_dbus_method_invocation_return_value(invocation, NULL);
 }
 
 static void mpris_Player_PlayPause(GDBusMethodInvocation *invocation, GVariant* parameters, Mpris2Provider *provider) {
-    ParoleProviderPlayer *player = provider->player;
-    ParoleState state = parole_provider_player_get_state(player);
+    RespiteProviderPlayer *player = provider->player;
+    RespiteState state = respite_provider_player_get_state(player);
 
     switch (state) {
         case PAROLE_STATE_PAUSED:
-            parole_provider_player_resume(player);
+            respite_provider_player_resume(player);
             break;
 
         case PAROLE_STATE_STOPPED:
         case PAROLE_STATE_PLAYBACK_FINISHED:
-            parole_provider_player_play_next(player);
+            respite_provider_player_play_next(player);
             break;
 
         case PAROLE_STATE_ABOUT_TO_FINISH:
         case PAROLE_STATE_PLAYING:
-            parole_provider_player_pause(player);
+            respite_provider_player_pause(player);
             break;
     }
 
@@ -300,20 +301,20 @@ static void mpris_Player_PlayPause(GDBusMethodInvocation *invocation, GVariant* 
 }
 
 static void mpris_Player_Stop(GDBusMethodInvocation *invocation, GVariant* parameters, Mpris2Provider *provider) {
-    parole_provider_player_stop(provider->player);
+    respite_provider_player_stop(provider->player);
 
     g_dbus_method_invocation_return_value(invocation, NULL);
 }
 
 static void mpris_Player_Seek(GDBusMethodInvocation *invocation, GVariant* parameters, Mpris2Provider *provider) {
-    ParoleProviderPlayer *player = provider->player;
-    const ParoleStream *stream = parole_provider_player_get_stream(player);
+    RespiteProviderPlayer *player = provider->player;
+    const RespiteStream *stream = respite_provider_player_get_stream(player);
     gint64 param;
     gint64 curr_pos;
     gint64 seek;
     gint64 duration;
 
-    if (parole_provider_player_get_state(player) == PAROLE_STATE_STOPPED) {
+    if (respite_provider_player_get_state(player) == PAROLE_STATE_STOPPED) {
         g_dbus_method_invocation_return_error_literal(invocation,
             G_DBUS_ERROR, G_DBUS_ERROR_FAILED, "Nothing to seek");
         return;
@@ -321,14 +322,14 @@ static void mpris_Player_Seek(GDBusMethodInvocation *invocation, GVariant* param
 
     g_variant_get(parameters, "(x)", &param);
 
-    curr_pos = parole_provider_player_get_stream_position(player);
+    curr_pos = respite_provider_player_get_stream_position(player);
     seek = (curr_pos + param) / GST_MSECOND;
 
     g_object_get(G_OBJECT(stream), "duration", &duration, NULL);
 
     seek = CLAMP(seek, 0, duration);
 
-    parole_provider_player_seek(player, seek);
+    respite_provider_player_seek(player, seek);
 
     g_dbus_method_invocation_return_value(invocation, NULL);
 }
@@ -336,14 +337,14 @@ static void mpris_Player_Seek(GDBusMethodInvocation *invocation, GVariant* param
 static void mpris_Player_SetPosition(GDBusMethodInvocation *invocation,
                                      GVariant* parameters,
                                      Mpris2Provider *provider) {
-    ParoleProviderPlayer *player = provider->player;
-    const ParoleStream *stream = parole_provider_player_get_stream(player);
+    RespiteProviderPlayer *player = provider->player;
+    const RespiteStream *stream = respite_provider_player_get_stream(player);
     gchar *track_id = NULL;
     gint64 param;
     gint64 seek;
     gint64 duration;
 
-    if (parole_provider_player_get_state(player) == PAROLE_STATE_STOPPED) {
+    if (respite_provider_player_get_state(player) == PAROLE_STATE_STOPPED) {
         g_dbus_method_invocation_return_error_literal(invocation,
             G_DBUS_ERROR, G_DBUS_ERROR_FAILED, "Nothing to seek");
         return;
@@ -359,7 +360,7 @@ static void mpris_Player_SetPosition(GDBusMethodInvocation *invocation,
 
     seek = CLAMP(seek, 0, duration);
 
-    parole_provider_player_seek(player, seek);
+    respite_provider_player_seek(player, seek);
 
     g_dbus_method_invocation_return_value(invocation, NULL);
 }
@@ -367,11 +368,11 @@ static void mpris_Player_SetPosition(GDBusMethodInvocation *invocation,
 static void mpris_Player_OpenUri(GDBusMethodInvocation *invocation, GVariant* parameters, Mpris2Provider *provider) {
     gchar *uri = NULL;
     gboolean happened = FALSE;
-    ParoleProviderPlayer *player = provider->player;
+    RespiteProviderPlayer *player = provider->player;
 
     g_variant_get(parameters, "(s)", &uri);
     if (uri) {
-        happened = parole_provider_player_play_uri(player, uri);
+        happened = respite_provider_player_play_uri(player, uri);
         g_free(uri);
     }
 
@@ -385,9 +386,9 @@ static void mpris_Player_OpenUri(GDBusMethodInvocation *invocation, GVariant* pa
 }
 
 static GVariant* mpris_Player_get_PlaybackStatus(GError **error, Mpris2Provider *provider) {
-    ParoleProviderPlayer *player = provider->player;
+    RespiteProviderPlayer *player = provider->player;
 
-    switch (parole_provider_player_get_state(player)) {
+    switch (respite_provider_player_get_state(player)) {
         case PAROLE_STATE_ABOUT_TO_FINISH:
         case PAROLE_STATE_PLAYING:
             return g_variant_new_string("Playing");
@@ -435,7 +436,7 @@ static void mpris_Player_put_Shuffle(GVariant *value, GError **error, Mpris2Prov
     g_object_set(G_OBJECT(provider->conf), "shuffle", shuffle, NULL);
 }
 
-static GVariant * handle_get_trackid(const ParoleStream *stream) {
+static GVariant * handle_get_trackid(const RespiteStream *stream) {
     // TODO: Returning a path requires TrackList interface implementation
     gchar o[260];
     if (NULL == stream)
@@ -466,7 +467,7 @@ static void g_variant_builder_add_string(GVariantBuilder *b, const gchar *tag, c
         g_variant_new_string(val));
 }
 
-static void handle_get_metadata(const ParoleStream *stream, GVariantBuilder *b) {
+static void handle_get_metadata(const RespiteStream *stream, GVariantBuilder *b) {
     gchar *title, *album, *artist, *year, *comment, *stream_uri, *genre, *image_uri;
     gint track_id, bitrate;
     gint64 duration;
@@ -523,13 +524,13 @@ static void handle_get_metadata(const ParoleStream *stream, GVariantBuilder *b) 
 
 static GVariant* mpris_Player_get_Metadata(GError **error, Mpris2Provider *provider) {
     GVariantBuilder b;
-    const ParoleStream *stream;
-    ParoleProviderPlayer *player = provider->player;
+    const RespiteStream *stream;
+    RespiteProviderPlayer *player = provider->player;
 
     g_variant_builder_init(&b, G_VARIANT_TYPE("a{sv}"));
 
-    if (parole_provider_player_get_state(player) != PAROLE_STATE_STOPPED) {
-        stream = parole_provider_player_get_stream(player);
+    if (respite_provider_player_get_state(player) != PAROLE_STATE_STOPPED) {
+        stream = respite_provider_player_get_stream(player);
 
         handle_get_metadata(stream, &b);
     } else {
@@ -565,10 +566,10 @@ static void mpris_Player_put_Volume(GVariant *value, GError **error, Mpris2Provi
 }
 
 static GVariant* mpris_Player_get_Position(GError **error, Mpris2Provider *provider) {
-    ParoleProviderPlayer *player = provider->player;
+    RespiteProviderPlayer *player = provider->player;
     gint64 position = 0;
 
-    position =(gint64) parole_provider_player_get_stream_position(player);
+    position =(gint64) respite_provider_player_get_stream_position(player);
 
     return g_variant_new_int64(position);
 }
@@ -593,24 +594,24 @@ static GVariant* mpris_Player_get_CanGoPrevious(GError **error, Mpris2Provider *
 
 static GVariant* mpris_Player_get_CanPlay(GError **error, Mpris2Provider *provider) {
     /* The CanPlay property should be true when the player is playing or paused. */
-    ParoleProviderPlayer *player = provider->player;
-    gint state = parole_provider_player_get_state(player);
+    RespiteProviderPlayer *player = provider->player;
+    gint state = respite_provider_player_get_state(player);
     return g_variant_new_boolean (state == PAROLE_STATE_PAUSED || state == PAROLE_STATE_PLAYING);
 }
 
 static GVariant* mpris_Player_get_CanPause(GError **error, Mpris2Provider *provider) {
     /* The CanPause property should be true when the player is playing or paused. */
-    ParoleProviderPlayer *player = provider->player;
-    gint state = parole_provider_player_get_state(player);
+    RespiteProviderPlayer *player = provider->player;
+    gint state = respite_provider_player_get_state(player);
     return g_variant_new_boolean (state == PAROLE_STATE_PAUSED || state == PAROLE_STATE_PLAYING);
 }
 
 static GVariant* mpris_Player_get_CanSeek(GError **error, Mpris2Provider *provider) {
     gboolean seekable = FALSE;
-    ParoleProviderPlayer *player = provider->player;
+    RespiteProviderPlayer *player = provider->player;
 
-    const ParoleStream *stream;
-    stream = parole_provider_player_get_stream(player);
+    const RespiteStream *stream;
+    stream = respite_provider_player_get_stream(player);
 
     g_object_get(G_OBJECT(stream),
                   "seekable", &seekable,
@@ -627,21 +628,21 @@ static GVariant* mpris_Player_get_CanControl(GError **error, Mpris2Provider *pro
  * Update state.
  */
 
-static void parole_mpris_update_any(Mpris2Provider *provider) {
-    const ParoleStream *stream;
+static void respite_mpris_update_any(Mpris2Provider *provider) {
+    const RespiteStream *stream;
     gboolean change_detected = FALSE, shuffle = FALSE, repeat = FALSE;
     gchar *stream_uri = NULL;
     GVariantBuilder b;
     gdouble curr_vol = 0;
 
-    ParoleProviderPlayer *player = provider->player;
+    RespiteProviderPlayer *player = provider->player;
 
     if (NULL == provider->dbus_connection)
         return; /* better safe than sorry */
 
     g_debug("MPRIS: update any");
 
-    stream = parole_provider_player_get_stream(player);
+    stream = respite_provider_player_get_stream(player);
     g_object_get(G_OBJECT(stream),
                   "uri", &stream_uri,
                   NULL);
@@ -654,9 +655,9 @@ static void parole_mpris_update_any(Mpris2Provider *provider) {
         provider->saved_shuffle = shuffle;
         g_variant_builder_add(&b, "{sv}", "Shuffle", mpris_Player_get_Shuffle(NULL, provider));
     }
-    if (provider->state != parole_provider_player_get_state(player)) {
+    if (provider->state != respite_provider_player_get_state(player)) {
         change_detected = TRUE;
-        provider->state = parole_provider_player_get_state(player);
+        provider->state = respite_provider_player_get_state(player);
         g_variant_builder_add(&b, "{sv}", "PlaybackStatus", mpris_Player_get_PlaybackStatus(NULL, provider));
         g_variant_builder_add(&b, "{sv}", "CanPlay", mpris_Player_get_CanPlay(NULL, provider));
         g_variant_builder_add(&b, "{sv}", "CanPause", mpris_Player_get_CanPause(NULL, provider));
@@ -674,7 +675,7 @@ static void parole_mpris_update_any(Mpris2Provider *provider) {
         provider->volume = curr_vol;
         g_variant_builder_add(&b, "{sv}", "Volume", mpris_Player_get_Volume(NULL, provider));
     }
-    if (parole_provider_player_get_state(player) == PAROLE_STATE_PLAYING) {
+    if (respite_provider_player_get_state(player) == PAROLE_STATE_PLAYING) {
         if (g_strcmp0(provider->saved_title, stream_uri) != 0) {
             change_detected = TRUE;
             if (provider->saved_title)
@@ -687,7 +688,7 @@ static void parole_mpris_update_any(Mpris2Provider *provider) {
             g_variant_builder_add(&b, "{sv}", "Metadata", mpris_Player_get_Metadata(NULL, provider));
         }
     }
-    if (provider->saved_fullscreen != parole_provider_player_get_fullscreen(player)) {
+    if (provider->saved_fullscreen != respite_provider_player_get_fullscreen(player)) {
         change_detected = TRUE;
         provider->saved_fullscreen = !provider->saved_fullscreen;
         g_variant_builder_add(&b, "{sv}", "Fullscreen", mpris_Root_get_Fullscreen(NULL, provider));
@@ -709,22 +710,22 @@ static void parole_mpris_update_any(Mpris2Provider *provider) {
 
 
 static void
-state_changed_cb(ParoleProviderPlayer *player,
-                 const ParoleStream *stream,
-                 ParoleState state,
+state_changed_cb(RespiteProviderPlayer *player,
+                 const RespiteStream *stream,
+                 RespiteState state,
                  Mpris2Provider *provider) {
-    parole_mpris_update_any(provider);
+    respite_mpris_update_any(provider);
 }
 
 /*
 static void
-seeked_cb(ParoleProviderPlayer *player, Mpris2Provider *provider) {
+seeked_cb(RespiteProviderPlayer *player, Mpris2Provider *provider) {
     gint64 position = 0;
 
     if (NULL == provider->dbus_connection)
         return; // better safe than sorry
 
-    position =(gint64) parole_provider_player_get_stream_position(provider->player);
+    position =(gint64) respite_provider_player_get_stream_position(provider->player);
 
     g_dbus_connection_emit_signal(provider->dbus_connection, NULL, MPRIS_PATH,
             "org.mpris.MediaPlayer2.Player", "Seeked",
@@ -733,8 +734,8 @@ seeked_cb(ParoleProviderPlayer *player, Mpris2Provider *provider) {
 */
 
 static void
-conf_changed_cb(ParoleConf *conf, GParamSpec *pspec, Mpris2Provider *provider) {
-    parole_mpris_update_any(provider);
+conf_changed_cb(RespiteConf *conf, GParamSpec *pspec, Mpris2Provider *provider) {
+    respite_mpris_update_any(provider);
 }
 
 
@@ -751,7 +752,7 @@ handle_method_call(GDBusConnection       *connection,
                    GDBusMethodInvocation *invocation,
                    gpointer               user_data) {
     Mpris2Provider *provider;
-    ParoleProviderPlugin *plugin = user_data;
+    RespiteProviderPlugin *plugin = user_data;
     provider = MPRIS2_PROVIDER(plugin);
 
     /* org.mpris.MediaPlayer2 */
@@ -782,7 +783,7 @@ handle_get_property(GDBusConnection *connection,
                     GError         **error,
                     gpointer         user_data) {
     Mpris2Provider *provider;
-    ParoleProviderPlugin *plugin = user_data;
+    RespiteProviderPlugin *plugin = user_data;
     provider = MPRIS2_PROVIDER(plugin);
 
     /* org.mpris.MediaPlayer2 */
@@ -828,7 +829,7 @@ handle_set_property(GDBusConnection       *connection,
                     GVariant              *value,
                     GError               **error,
                     void                  *user_data) {
-    ParoleProviderPlugin *plugin = user_data;
+    RespiteProviderPlugin *plugin = user_data;
     Mpris2Provider *provider = MPRIS2_PROVIDER(plugin);
 
     /* org.mpris.MediaPlayer2 */
@@ -858,7 +859,7 @@ on_bus_acquired(GDBusConnection *connection, const gchar *name, gpointer user_da
     Mpris2Provider *provider;
     guint registration_id;
 
-    ParoleProviderPlugin *plugin = user_data;
+    RespiteProviderPlugin *plugin = user_data;
 
     provider = MPRIS2_PROVIDER(plugin);
 
@@ -898,7 +899,7 @@ on_name_acquired(GDBusConnection *connection,
 static void
 on_name_lost(GDBusConnection *connection, const gchar *name, gpointer user_data) {
     Mpris2Provider *provider;
-    ParoleProviderPlugin *plugin = user_data;
+    RespiteProviderPlugin *plugin = user_data;
     provider = MPRIS2_PROVIDER(plugin);
 
     if (NULL != provider->dbus_connection) {
@@ -913,7 +914,7 @@ static gboolean
 on_window_state_event(GtkWidget *widget,
                       GdkEventWindowState *event,
                       Mpris2Provider *provider) {
-    parole_mpris_update_any(provider);
+    respite_mpris_update_any(provider);
     return FALSE;
 }
 
@@ -921,12 +922,12 @@ on_window_state_event(GtkWidget *widget,
  * Plugin interface.
  */
 
-static gboolean mpris2_provider_is_configurable(ParoleProviderPlugin *plugin) {
+static gboolean mpris2_provider_is_configurable(RespiteProviderPlugin *plugin) {
     return FALSE;
 }
 
 static void
-mpris2_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *player) {
+mpris2_provider_set_player(RespiteProviderPlugin *plugin, RespiteProviderPlayer *player) {
     Mpris2Provider *provider;
     GtkWidget *window;
     provider = MPRIS2_PROVIDER(plugin);
@@ -954,7 +955,7 @@ mpris2_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *p
                       G_CALLBACK(seeked_cb), plugin);
 */
 
-    provider->conf = parole_conf_new();
+    provider->conf = respite_conf_new();
 
     g_signal_connect_object(provider->conf, "notify::repeat",
                       G_CALLBACK(conf_changed_cb), plugin, 0);
@@ -965,7 +966,7 @@ mpris2_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *p
     g_signal_connect_object(provider->conf, "notify::volume",
                       G_CALLBACK(conf_changed_cb), plugin, 0);
 
-    window = parole_provider_player_get_main_window(provider->player);
+    window = respite_provider_player_get_main_window(provider->player);
     provider->window_state_changed = g_signal_connect(G_OBJECT(window),
                                                       "window-state-event",
                                                       G_CALLBACK(on_window_state_event),
@@ -973,7 +974,7 @@ mpris2_provider_set_player(ParoleProviderPlugin *plugin, ParoleProviderPlayer *p
 }
 
 static void
-mpris2_provider_iface_init(ParoleProviderPluginIface *iface) {
+mpris2_provider_iface_init(RespiteProviderPluginIface *iface) {
     iface->get_is_configurable = mpris2_provider_is_configurable;
     iface->set_player = mpris2_provider_set_player;
 }
@@ -995,7 +996,7 @@ static void mpris2_provider_finalize(GObject *object) {
     provider = MPRIS2_PROVIDER(object);
 
     if (provider->window_state_changed > 0) {
-        window = parole_provider_player_get_main_window(provider->player);
+        window = respite_provider_player_get_main_window(provider->player);
         if (window != NULL && g_signal_handler_is_connected(window, provider->window_state_changed))
             g_signal_handler_disconnect(window, provider->window_state_changed);
     }

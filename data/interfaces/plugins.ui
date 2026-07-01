@@ -2,7 +2,6 @@
 <!-- Generated with glade 3.22.2 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
-  <requires lib="libxfce4ui-2" version="4.11"/>
   <object class="GtkListStore" id="liststore">
     <columns>
       <!-- column-name toggle -->
@@ -15,17 +14,17 @@
       <column type="gpointer"/>
     </columns>
   </object>
-  <object class="XfceTitledDialog" id="dialog">
+  <object class="GtkDialog" id="dialog">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Parole Plugins</property>
+    <property name="title" translatable="yes">Respite Plugins</property>
     <property name="default_width">400</property>
     <property name="default_height">300</property>
     <property name="destroy_with_parent">True</property>
-    <property name="icon_name">parole-extension</property>
+    <property name="icon_name">respite-extension</property>
     <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
-    <signal name="response" handler="parole_plugins_manager_pref_response_cb" swapped="no"/>
+    <signal name="response" handler="respite_plugins_manager_pref_response_cb" swapped="no"/>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox1">
         <property name="can_focus">False</property>
@@ -79,7 +78,7 @@
                     <property name="headers_visible">False</property>
                     <property name="headers_clickable">False</property>
                     <property name="search_column">0</property>
-                    <signal name="cursor-changed" handler="parole_plugins_manager_tree_cursor_changed_cb" swapped="no"/>
+                    <signal name="cursor-changed" handler="respite_plugins_manager_tree_cursor_changed_cb" swapped="no"/>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="treeview-selection1"/>
                     </child>
@@ -87,7 +86,7 @@
                       <object class="GtkTreeViewColumn" id="treeviewcolumn1">
                         <child>
                           <object class="GtkCellRendererToggle" id="cellrenderertoggle">
-                            <signal name="toggled" handler="parole_plugins_manager_cell_toggled_cb" swapped="no"/>
+                            <signal name="toggled" handler="respite_plugins_manager_cell_toggled_cb" swapped="no"/>
                           </object>
                           <attributes>
                             <attribute name="active">0</attribute>
@@ -132,7 +131,7 @@
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Preferences</property>
                         <property name="use_underline">True</property>
-                        <signal name="clicked" handler="parole_plugins_manager_show_configure" swapped="no"/>
+                        <signal name="clicked" handler="respite_plugins_manager_show_configure" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -145,7 +144,7 @@
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">About</property>
                         <property name="use_underline">True</property>
-                        <signal name="clicked" handler="parole_plugins_manager_show_about" swapped="no"/>
+                        <signal name="clicked" handler="respite_plugins_manager_show_about" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>

@@ -2,7 +2,7 @@ sample_plugin_sources = [
   'sample-plugin.c',
   'sample-provider.c',
   'sample-provider.h',
-  parole_h,
+  respite_h,
 ]
 
 shared_module(
@@ -19,8 +19,7 @@ shared_module(
   dependencies: [
     glib,
     gtk,
-    libparole_dep,
-    libxfce4util,
+    librespite_dep,
   ],
   install: false,
 )

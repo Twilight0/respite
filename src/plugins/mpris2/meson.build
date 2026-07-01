@@ -1,13 +1,13 @@
-parole_mpris2_sources = [
+respite_mpris2_sources = [
   'mpris2-plugin.c',
   'mpris2-provider.c',
   'mpris2-provider.h',
-  parole_h,
+  respite_h,
 ]
 
 shared_module(
-  'parole-mpris2',
-  parole_mpris2_sources,
+  'respite-mpris2',
+  respite_mpris2_sources,
   name_prefix: '',
   gnu_symbol_visibility: 'hidden',
   c_args: [
@@ -22,11 +22,10 @@ shared_module(
     gstreamer,
     gstreamer_base,
     gstreamer_tag,
-    libparole_dep,
-    libxfce4util,
+    librespite_dep,
   ],
   install: true,
-  install_dir: get_option('prefix') / get_option('libdir') / 'parole-0',
+  install_dir: get_option('prefix') / get_option('libdir') / 'respite-0',
 )
 
 i18n.merge_file(
@@ -35,5 +34,5 @@ i18n.merge_file(
   po_dir: '..' / '..' / '..' / 'po',
   type: 'desktop',
   install: true,
-  install_dir: pkgdatadir / 'parole-plugins-0',
+  install_dir: pkgdatadir / 'respite-plugins-0',
 )

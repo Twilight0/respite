@@ -7,19 +7,19 @@ version_xml = configure_file(
 )
 
 gnome.gtkdoc(
-  'Parole-Plugins',
+  'Respite-Plugins',
   mode: 'sgml',
   main_xml: 'Parole-Plugins-docs.sgml',
-  src_dir: libparole_inc,
+  src_dir: librespite_inc,
   content_files: [
     version_xml,
-    'parole-plugins-tut.sgml',
+    'respite-plugins-tut.sgml',
   ],
   scan_args: '--rebuild-types',
-  dependencies: libparole_doc_dep,
+  dependencies: librespite_doc_dep,
   ignore_headers: [
-    'parole-enum-types.h',
-    'parole-marshal.h',
+    'respite-enum-types.h',
+    'respite-marshal.h',
   ],
   install: true,
 )

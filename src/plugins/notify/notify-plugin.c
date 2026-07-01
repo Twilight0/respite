@@ -20,17 +20,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfce4util/libxfce4util.h>
+#include <glib/gi18n.h>
 
 #include "src/plugins/notify/notify-provider.h"
 
-G_MODULE_EXPORT GType       parole_plugin_initialize(ParoleProviderPlugin *plugin);
+G_MODULE_EXPORT GType       respite_plugin_initialize(RespiteProviderPlugin *plugin);
 
-G_MODULE_EXPORT void        parole_plugin_shutdown(void);
+G_MODULE_EXPORT void        respite_plugin_shutdown(void);
 
 G_MODULE_EXPORT GType
-parole_plugin_initialize(ParoleProviderPlugin *plugin) {
-    xfce_textdomain(GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR, "UTF-8");
+respite_plugin_initialize(RespiteProviderPlugin *plugin) {
+    bindtextdomain(GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
+    textdomain(GETTEXT_PACKAGE);
 
     notify_provider_register_type(plugin);
 
@@ -38,5 +39,5 @@ parole_plugin_initialize(ParoleProviderPlugin *plugin) {
 }
 
 G_MODULE_EXPORT void
-parole_plugin_shutdown(void) {
+respite_plugin_shutdown(void) {
 }

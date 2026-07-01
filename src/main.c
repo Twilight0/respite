@@ -20,16 +20,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifdef HAVE_XFCE_REVISION_H
 #include "xfce-revision.h"
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <unistd.h>
-#include <signal.h>
 
 #include <gtk/gtk.h>
 #include <glib.h>
@@ -37,8 +33,8 @@
 
 #include <gst/gst.h>
 
-#include <libxfce4util/libxfce4util.h>
-#include <xfconf/xfconf.h>
+#include <glib/gi18n.h>
+#include <glib-unix.h>
 
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -49,13 +45,13 @@
 #include <gdk/gdkx.h>
 #endif
 
-#include "src/dbus/parole-dbus.h"
+#include "src/dbus/respite-dbus.h"
 
-#include "src/parole-builder.h"
-#include "src/parole-conf.h"
-#include "src/parole-player.h"
-#include "src/parole-plugins-manager.h"
-#include "src/parole-utils.h"
+#include "src/respite-builder.h"
+#include "src/respite-conf.h"
+#include "src/respite-player.h"
+#include "src/respite-plugins-manager.h"
+#include "src/respite-utils.h"
 
 static void G_GNUC_NORETURN
 show_version(void) {
@@ -67,22 +63,23 @@ show_version(void) {
     exit(EXIT_SUCCESS);
 }
 
-static void
-parole_sig_handler(gint sig, gpointer data) {
-    ParolePlayer *player = (ParolePlayer *) data;
+static gboolean
+respite_glib_signal_handler(gpointer data) {
+    RespitePlayer *player = (RespitePlayer *) data;
 
-    parole_player_terminate(player);
+    respite_player_terminate(player);
+    return G_SOURCE_REMOVE;
 }
 
 /**
- * parole_send_play_disc:
+ * respite_send_play_disc:
  * @uri    : the URI address of a disc or %NULL
  * @device : the UNIX device for a disc or %NULL
  *
  * Load the discs that is passed as a cli argument to Parole.
  **/
 static void
-parole_send_play_disc(const gchar *uri, const gchar *device) {
+respite_send_play_disc(const gchar *uri, const gchar *device) {
     DBusGProxy *proxy;
     GError *error = NULL;
     gchar *uri_local;
@@ -90,10 +87,10 @@ parole_send_play_disc(const gchar *uri, const gchar *device) {
     if ( uri ) {
         uri_local = g_strdup(uri);
     } else {
-        uri_local = parole_get_uri_from_unix_device(device);
+        uri_local = respite_get_uri_from_unix_device(device);
     }
 
-    proxy = parole_get_proxy(PAROLE_DBUS_PATH, PAROLE_DBUS_INTERFACE);
+    proxy = respite_get_proxy(RESPITE_DBUS_PATH, RESPITE_DBUS_INTERFACE);
 
     dbus_g_proxy_call(proxy, "PlayDisc", &error,
                        G_TYPE_STRING, uri_local,
@@ -104,7 +101,7 @@ parole_send_play_disc(const gchar *uri, const gchar *device) {
     g_free(uri_local);
 
     if ( error ) {
-        g_critical("Unable to send uri to Parole: %s", error->message);
+        g_critical("Unable to send uri to Respite: %s", error->message);
         g_error_free(error);
     }
 
@@ -112,7 +109,7 @@ parole_send_play_disc(const gchar *uri, const gchar *device) {
 }
 
 /**
- * parole_send_files:
+ * respite_send_files:
  * @filenames : the list of files to be played in Parole
  * @enqueue   : %TRUE if files should be added to the playlist or %FALSE if the
  *              playlist should be replaced
@@ -120,17 +117,17 @@ parole_send_play_disc(const gchar *uri, const gchar *device) {
  * Load files that are passed as cli arguments to Parole.
  **/
 static void
-parole_send_files(gchar **filenames, gboolean enqueue) {
+respite_send_files(gchar **filenames, gboolean enqueue) {
     DBusGProxy *proxy;
     GFile *file;
     gchar **out_paths;
     GError *error = NULL;
     guint i;
 
-    proxy = parole_get_proxy(PAROLE_DBUS_PLAYLIST_PATH, PAROLE_DBUS_PLAYLIST_INTERFACE);
+    proxy = respite_get_proxy(RESPITE_DBUS_PLAYLIST_PATH, RESPITE_DBUS_PLAYLIST_INTERFACE);
 
     if ( !proxy )
-        g_error("Unable to create proxy for %s", PAROLE_DBUS_NAME);
+        g_error("Unable to create proxy for %s", RESPITE_DBUS_NAME);
 
     out_paths = g_new0(gchar *, g_strv_length(filenames) + 1);
 
@@ -148,7 +145,7 @@ parole_send_files(gchar **filenames, gboolean enqueue) {
 
 
     if ( error ) {
-        g_critical("Unable to send media files to Parole: %s", error->message);
+        g_critical("Unable to send media files to Respite: %s", error->message);
         g_error_free(error);
     }
 
@@ -157,7 +154,7 @@ parole_send_files(gchar **filenames, gboolean enqueue) {
 }
 
 /**
- * parole_send:
+ * respite_send:
  * @filenames : a list of files to be played
  * @device    : a URI pointing to a disc to be played or %NULL
  * @enqueue   : %TRUE if files should be added to the playlist or %FALSE if the
@@ -166,25 +163,25 @@ parole_send_files(gchar **filenames, gboolean enqueue) {
  * Load the files or device that are passed as cli arguments to Parole.
  **/
 static void
-parole_send(gchar **filenames, gchar *device, gboolean enqueue) {
-    if ( g_strv_length (filenames) == 1 && parole_is_uri_disc (filenames[0]))
-        parole_send_play_disc(filenames[0], device);
+respite_send(gchar **filenames, gchar *device, gboolean enqueue) {
+    if ( g_strv_length (filenames) == 1 && respite_is_uri_disc (filenames[0]))
+        respite_send_play_disc(filenames[0], device);
     else
-        parole_send_files(filenames, enqueue);
+        respite_send_files(filenames, enqueue);
 }
 
 /**
- * parole_send_message:
+ * respite_send_message:
  * @message : message string to be sent to DBUS
  *
  * Send a message via DBUS to Parole.
  **/
 static void
-parole_send_message(const gchar *message) {
+respite_send_message(const gchar *message) {
     DBusGProxy *proxy;
     GError *error = NULL;
 
-    proxy = parole_get_proxy(PAROLE_DBUS_PATH, PAROLE_DBUS_INTERFACE);
+    proxy = respite_get_proxy(RESPITE_DBUS_PATH, RESPITE_DBUS_INTERFACE);
 
     dbus_g_proxy_call(proxy, message, &error,
                        G_TYPE_INVALID,
@@ -199,8 +196,8 @@ parole_send_message(const gchar *message) {
 }
 
 int main(int argc, char **argv) {
-    ParolePlayer *player;
-    ParolePluginsManager *plugins;
+    RespitePlayer *player;
+    RespitePluginsManager *plugins;
     GtkBuilder *builder;
     GOptionContext *ctx;
     GOptionGroup *gst_option_group;
@@ -262,19 +259,13 @@ int main(int argc, char **argv) {
 
     dbus_threads_init_default();
 
-    /* initialize xfconf */
-    if (!xfconf_init(&error)) {
-        g_critical("Failed to initialize Xfconf: %s", error->message);
-        g_error_free(error);
-        return EXIT_FAILURE;
-    }
-
 #ifdef ENABLE_X11
     if (GDK_IS_X11_DISPLAY(gdk_display_get_default()))
         XInitThreads();
 #endif
 
-    xfce_textdomain(GETTEXT_PACKAGE, LOCALEDIR, "UTF-8");
+    bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR);
+    textdomain(GETTEXT_PACKAGE);
 
     g_set_application_name(PACKAGE_NAME);
     g_set_prgname("org.gnome.Respite");
@@ -303,92 +294,79 @@ int main(int argc, char **argv) {
         show_version();
 
     /* Check for cli options if there is an instance of Parole already */
-    if (!new_instance && parole_dbus_name_has_owner(PAROLE_DBUS_NAME)) {
+    if (!new_instance && respite_dbus_name_has_owner(RESPITE_DBUS_NAME)) {
         /* Clear startup notification */
         gdk_notify_startup_complete();
 
         if (!enqueue && !play && !next_track && !prev_track &&
             !raise_volume && !lower_volume && !mute && !unmute)
-            g_print(_("Parole is already running, use -i to open a new instance\n"));
+            g_print(_("Respite is already running, use -i to open a new instance\n"));
 
         if ( filenames && filenames[0] != NULL )
-            parole_send(filenames, device, enqueue);
+            respite_send(filenames, device, enqueue);
         else if (device != NULL)
-            parole_send_play_disc(NULL, device);
+            respite_send_play_disc(NULL, device);
 
         if ( play )
-            parole_send_message("Play");
+            respite_send_message("Play");
 
         if ( next_track )
-            parole_send_message("NextTrack");
+            respite_send_message("NextTrack");
 
         if ( prev_track )
-            parole_send_message("PrevTrack");
+            respite_send_message("PrevTrack");
 
         if ( raise_volume )
-            parole_send_message("RaiseVolume");
+            respite_send_message("RaiseVolume");
 
         if ( lower_volume )
-            parole_send_message("LowerVolume");
+            respite_send_message("LowerVolume");
 
         if ( mute )
-            parole_send_message("Mute");
+            respite_send_message("Mute");
 
         if ( unmute )
-            parole_send_message("Unmute");
+            respite_send_message("Unmute");
 
     /* Create a new instance because Parole isn't running */
     } else {
-        builder = parole_builder_get_main_interface();
-        parole_dbus_register_name(PAROLE_DBUS_NAME);
+        builder = respite_builder_get_main_interface();
+        respite_dbus_register_name(RESPITE_DBUS_NAME);
 
-        player = parole_player_new(client_id);
+        player = respite_player_new(client_id);
         g_free(client_id);
 
         if (embedded)
-            parole_player_embedded(player);
+            respite_player_embedded(player);
         else if (fullscreen)
-            parole_player_full_screen(player, TRUE);
+            respite_player_full_screen(player, TRUE);
 
         if ( filenames && filenames[0] != NULL ) {
-            if (g_strv_length(filenames) == 1 && parole_is_uri_disc(filenames[0])) {
-                parole_player_play_uri_disc(player, filenames[0], device);
+            if (g_strv_length(filenames) == 1 && respite_is_uri_disc(filenames[0])) {
+                respite_player_play_uri_disc(player, filenames[0], device);
             } else {
-                ParoleMediaList *list;
-                list = parole_player_get_media_list(player);
-                parole_media_list_add_files(list, filenames, enqueue);
+                RespiteMediaList *list;
+                list = respite_player_get_media_list(player);
+                respite_media_list_add_files(list, filenames, enqueue);
             }
         } else if ( device != NULL ) {
-            parole_player_play_uri_disc(player, NULL, device);
+            respite_player_play_uri_disc(player, NULL, device);
         }
 
-        if (xfce_posix_signal_handler_init(&error)) {
-            xfce_posix_signal_handler_set_handler(SIGHUP,
-                                                  parole_sig_handler,
-                                                  player, NULL);
-
-            xfce_posix_signal_handler_set_handler(SIGINT,
-                                                  parole_sig_handler,
-                                                  player, NULL);
-
-            xfce_posix_signal_handler_set_handler(SIGTERM,
-                                                  parole_sig_handler,
-                                                  player, NULL);
-        } else {
-            g_warning("Unable to set up POSIX signal handlers: %s", error->message);
-            g_error_free(error);
-        }
+        g_unix_signal_add(SIGHUP, respite_glib_signal_handler, player);
+        g_unix_signal_add(SIGINT, respite_glib_signal_handler, player);
+        g_unix_signal_add(SIGTERM, respite_glib_signal_handler, player);
 
         /* Initialize the plugin-manager and load the plugins */
-        plugins = parole_plugins_manager_new(!no_plugins);
-        parole_plugins_manager_load(plugins);
+        plugins = respite_plugins_manager_new(!no_plugins);
+        respite_plugins_manager_load(plugins);
         g_object_unref(builder);
 
         /* Start main process */
         gdk_notify_startup_complete();
         gtk_main();
 
-        parole_dbus_release_name(PAROLE_DBUS_NAME);
+        respite_dbus_release_name(RESPITE_DBUS_NAME);
         g_object_unref(plugins);
     }
 

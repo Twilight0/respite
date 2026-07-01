@@ -1,6 +1,6 @@
-[Parole Plugin]
+[Respite Plugin]
 Module=tray-icon
 Name=Tray icon
 Description=Show icon in the system tray
 Authors=Ali Abdallah <aliov@xfce.org>
-Website=https://docs.xfce.org/apps/parole/start
+Website=https://github.com/Twilight0/respite
