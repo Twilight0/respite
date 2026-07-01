@@ -460,27 +460,27 @@ G_DEFINE_TYPE_WITH_PRIVATE(RespitePlayer, respite_player, G_TYPE_OBJECT)
 
 static gboolean
 respite_player_needs_pipe(const gchar *uri) {
-    if (g_str_has_prefix(uri, "https://www.youtube.com/") ||
-        g_str_has_prefix(uri, "https://youtube.com/") ||
-        g_str_has_prefix(uri, "https://youtu.be/") ||
-        g_str_has_prefix(uri, "https://www.dailymotion.com/") ||
-        g_str_has_prefix(uri, "https://dailymotion.com/") ||
-        g_str_has_prefix(uri, "https://www.rumble.com/") ||
-        g_str_has_prefix(uri, "https://rumble.com/") ||
-        g_str_has_prefix(uri, "https://odysee.com/") ||
-        g_str_has_prefix(uri, "https://lbry.tv/") ||
-        g_str_has_prefix(uri, "https://www.vimeo.com/") ||
-        g_str_has_prefix(uri, "https://vimeo.com/") ||
-        g_str_has_prefix(uri, "https://www.reddit.com/") ||
-        g_str_has_prefix(uri, "https://reddit.com/") ||
-        g_str_has_prefix(uri, "https://redd.it/") ||
-        g_str_has_prefix(uri, "https://www.bilibili.com/") ||
-        g_str_has_prefix(uri, "https://bilibili.com/") ||
-        g_str_has_prefix(uri, "https://archive.org/") ||
-        g_str_has_prefix(uri, "https://www.twitch.tv/") ||
-        g_str_has_prefix(uri, "https://twitch.tv/"))
-    {
-        return TRUE;
+    const gchar *domains[] = {
+        "youtube.com",
+        "youtu.be",
+        "dailymotion.com",
+        "dai.ly",
+        "rumble.com",
+        "odysee.com",
+        "lbry.tv",
+        "vimeo.com",
+        "reddit.com",
+        "redd.it",
+        "bilibili.com",
+        "archive.org",
+        "twitch.tv",
+        NULL
+    };
+
+    for (int i = 0; domains[i] != NULL; i++) {
+        if (strstr(uri, domains[i]) != NULL) {
+            return TRUE;
+        }
     }
     return FALSE;
 }
