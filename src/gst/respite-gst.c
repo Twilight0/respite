@@ -119,7 +119,7 @@ struct RespiteGstPrivate {
     GdkPixbuf          *logo;
     gchar              *device;
 
-    gpointer            conf; /* Specific for ParoleMediaPlayer*/
+    gpointer            conf; /* Specific for RespiteMediaPlayer*/
 
     gboolean            terminating;
     gboolean            enable_tags;
@@ -1341,10 +1341,10 @@ respite_gst_missing_codec_dialog(RespiteGst *gst, GstMessage *msg) {
 
     gtk_message_dialog_format_secondary_markup(dialog,
 #if defined(__linux__)
-                                             _("Parole needs <b>%s</b> to play this file.\n"
+                                             _("Respite needs <b>%s</b> to play this file.\n"
                                                "It can be installed automatically."),
 #else
-                                             _("Parole needs <b>%s</b> to play this file."),
+                                             _("Respite needs <b>%s</b> to play this file."),
 #endif
                                              desc);
 
@@ -2337,18 +2337,21 @@ respite_gst_spawn_subprocess(RespiteGst  *gst,
         return FALSE;
     }
 
-    argv = g_new0(gchar *, 5);
+    argv = g_new0(gchar *, 8);
     argv[0] = ytdlp_path;
-    argv[1] = g_strdup("-o");
-    argv[2] = g_strdup("-");
-    argv[3] = g_strdup(url);
-    argv[4] = NULL;
+    argv[1] = g_strdup("--no-check-certificates");
+    argv[2] = g_strdup("-f");
+    argv[3] = g_strdup("bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best");
+    argv[4] = g_strdup("-o");
+    argv[5] = g_strdup("-");
+    argv[6] = g_strdup(url);
+    argv[7] = NULL;
 
     if (!g_spawn_async_with_pipes(
             NULL,
             argv,
             NULL,
-            G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDERR_TO_DEV_NULL,
+            G_SPAWN_DO_NOT_REAP_CHILD,
             NULL,
             NULL,
             &child_pid,

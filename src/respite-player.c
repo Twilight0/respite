@@ -3554,7 +3554,7 @@ respite_player_init(RespitePlayer *player) {
 
     /* Time Slider */
     player->priv->range = GTK_WIDGET(gtk_builder_get_object(builder, "media_progress_slider"));
-    gtk_widget_set_name(player->priv->range, "ParoleScale");
+    gtk_widget_set_name(player->priv->range, "RespiteScale");
     g_signal_connect(player->priv->range, "button-release-event",
               G_CALLBACK(respite_player_range_button_release), player);
 

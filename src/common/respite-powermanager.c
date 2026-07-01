@@ -47,7 +47,7 @@ respite_power_manager_inhibit (GDBusConnection *connection) {
                                          DBUS_INTERFACE,
                                          "Inhibit",
                                          g_variant_new ("(ss)",
-                                                        "Parole",
+                                                        "Respite",
                                                         "Video Playback"),
                                          G_VARIANT_TYPE ("(u)"),
                                          G_DBUS_CALL_FLAGS_NONE,
