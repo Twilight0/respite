@@ -26,6 +26,7 @@
 #include <math.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -77,6 +78,10 @@ static GdkPixbuf *respite_gst_tag_list_get_cover(RespiteGst *gst,
 
 static gboolean   respite_gst_check_dvd_state_change_timeout (gpointer data);
 static gboolean   respite_gst_dvd_menu_timeout (gpointer data);
+
+static void       respite_gst_cleanup_pipe(RespiteGst *gst);
+static void       respite_gst_child_watch_cb(GPid pid, gint status, gpointer user_data);
+static gboolean   respite_gst_spawn_subprocess(RespiteGst *gst, const gchar *url, GError **error);
 
 typedef enum {
     GST_PLAY_FLAG_VIDEO         = (1 << 0),
@@ -2296,7 +2301,7 @@ respite_gst_child_watch_cb(GPid     pid,
         return;
 
     if (gst->priv->state >= GST_STATE_PAUSED) {
-        gboolean normal_exit = g_spawn_check_wait_status(status, NULL);
+        gboolean normal_exit = WIFEXITED(status) && WEXITSTATUS(status) == 0;
         if (!normal_exit) {
             GstMessage *msg;
             gchar *debug = g_strdup_printf("Subprocess %d exited with status %d", pid, status);
