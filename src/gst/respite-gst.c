@@ -2328,9 +2328,17 @@ respite_gst_spawn_subprocess(RespiteGst  *gst,
     GPid    child_pid;
     gint    child_stdout_fd = -1;
     gint    child_stderr_fd = -1;
+    gchar  *ytdlp_path;
+
+    ytdlp_path = g_find_program_in_path("yt-dlp");
+    if (!ytdlp_path) {
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED,
+                    "yt-dlp not found in PATH");
+        return FALSE;
+    }
 
     argv = g_new0(gchar *, 5);
-    argv[0] = g_strdup("yt-dlp");
+    argv[0] = ytdlp_path;
     argv[1] = g_strdup("-o");
     argv[2] = g_strdup("-");
     argv[3] = g_strdup(url);
