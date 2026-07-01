@@ -95,6 +95,56 @@ get_time_string(gchar *timestring, gint total_seconds) {
     }
 }
 
+static gboolean
+respite_player_needs_pipe(const gchar *uri) {
+    if (g_str_has_prefix(uri, "https://www.youtube.com/") ||
+        g_str_has_prefix(uri, "https://youtube.com/") ||
+        g_str_has_prefix(uri, "https://youtu.be/") ||
+        g_str_has_prefix(uri, "https://www.dailymotion.com/") ||
+        g_str_has_prefix(uri, "https://dailymotion.com/") ||
+        g_str_has_prefix(uri, "https://www.rumble.com/") ||
+        g_str_has_prefix(uri, "https://rumble.com/") ||
+        g_str_has_prefix(uri, "https://odysee.com/") ||
+        g_str_has_prefix(uri, "https://lbry.tv/") ||
+        g_str_has_prefix(uri, "https://www.vimeo.com/") ||
+        g_str_has_prefix(uri, "https://vimeo.com/") ||
+        g_str_has_prefix(uri, "https://www.reddit.com/") ||
+        g_str_has_prefix(uri, "https://reddit.com/") ||
+        g_str_has_prefix(uri, "https://redd.it/") ||
+        g_str_has_prefix(uri, "https://www.bilibili.com/") ||
+        g_str_has_prefix(uri, "https://bilibili.com/") ||
+        g_str_has_prefix(uri, "https://archive.org/") ||
+        g_str_has_prefix(uri, "https://www.twitch.tv/") ||
+        g_str_has_prefix(uri, "https://twitch.tv/"))
+    {
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static gboolean
+respite_player_has_ytdlp(void) {
+    gchar *path = g_find_program_in_path("yt-dlp");
+    if (path) {
+        g_free(path);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static void
+respite_player_show_ytdlp_error(RespitePlayer *player) {
+    GtkWidget *dialog;
+    dialog = gtk_message_dialog_new(
+        GTK_WINDOW(player->priv->window),
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_ERROR,
+        GTK_BUTTONS_OK,
+        _("Failed to open URL. yt-dlp is required to play streaming URLs but is not installed."));
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+}
+
 /*
  * DBus Glib init
  */
@@ -1061,10 +1111,19 @@ respite_player_media_activated_cb(RespiteMediaList *list, GtkTreeRowReference *r
             TRACE("Trying to play media file %s", uri);
             TRACE("File content type %s", respite_file_get_content_type(file));
 
-
-            respite_gst_play_uri(RESPITE_GST(player->priv->gst),
-                                 respite_file_get_uri(file),
-                                 sub);
+            if (respite_player_needs_pipe(uri)) {
+                if (respite_player_has_ytdlp()) {
+                    respite_gst_play_pipe(RESPITE_GST(player->priv->gst), uri);
+                } else {
+                    respite_player_show_ytdlp_error(player);
+                    g_object_unref(file);
+                    return;
+                }
+            } else {
+                respite_gst_play_uri(RESPITE_GST(player->priv->gst),
+                                     respite_file_get_uri(file),
+                                     sub);
+            }
 
             gtk_window_set_title(GTK_WINDOW(player->priv->window),
                                  respite_media_list_get_row_name(player->priv->list, player->priv->row));

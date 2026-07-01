@@ -30,6 +30,7 @@ optdepends=(
   'gst-plugins-ugly: additional codec support'
   'gst-plugins-bad: additional codec support'
   'gst-libav: ffmpeg/libav decoder support'
+  'yt-dlp: streaming URL support (YouTube, Dailymotion, Rumble, Odysee, Vimeo, Reddit, BiliBili, Archive.org, Twitch)'
 )
 source=("${pkgname}-${pkgver}.tar.gz")
 sha256sums=('SKIP')
