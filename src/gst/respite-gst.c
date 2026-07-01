@@ -2341,7 +2341,7 @@ respite_gst_spawn_subprocess(RespiteGst  *gst,
     argv[0] = ytdlp_path;
     argv[1] = g_strdup("--no-check-certificates");
     argv[2] = g_strdup("-f");
-    argv[3] = g_strdup("bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best");
+    argv[3] = g_strdup("best");
     argv[4] = g_strdup("-o");
     argv[5] = g_strdup("-");
     argv[6] = g_strdup(url);
@@ -2351,7 +2351,7 @@ respite_gst_spawn_subprocess(RespiteGst  *gst,
             NULL,
             argv,
             NULL,
-            G_SPAWN_DO_NOT_REAP_CHILD,
+            G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDERR_TO_DEV_NULL,
             NULL,
             NULL,
             &child_pid,
