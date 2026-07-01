@@ -31,7 +31,6 @@ optdepends=(
   'gst-plugins-bad: additional codec support'
   'gst-libav: ffmpeg/libav decoder support'
 )
-conflicts=('parole')
 source=("${pkgname}-${pkgver}.tar.gz")
 sha256sums=('SKIP')
 
