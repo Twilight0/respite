@@ -1,6 +1,6 @@
 # Maintainer: Twilight0 <twilight0@vivaldi.net>
 pkgname=respite
-pkgver=1.0.0
+pkgver=1.1.0
 pkgrel=1
 pkgdesc="A GTK3 media player (fork of Parole, Xfce deps removed)"
 arch=('x86_64' 'i686')
