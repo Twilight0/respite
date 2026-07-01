@@ -30,7 +30,7 @@
 static void   mpris2_provider_iface_init(RespiteProviderPluginIface *iface);
 static void   mpris2_provider_finalize(GObject                   *object);
 
-#define MPRIS_NAME "org.mpris.MediaPlayer2.parole"
+#define MPRIS_NAME "org.mpris.MediaPlayer2.respite"
 #define MPRIS_PATH "/org/mpris/MediaPlayer2"
 
 struct _Mpris2ProviderClass {
@@ -187,7 +187,7 @@ static GVariant* mpris_Root_get_Identity(GError **error, Mpris2Provider *provide
 }
 
 static GVariant* mpris_Root_get_DesktopEntry(GError **error, Mpris2Provider *provider) {
-    return g_variant_new_string("parole");
+    return g_variant_new_string("org.gnome.Respite");
 }
 
 static GVariant* mpris_Root_get_SupportedUriSchemes(GError **error, Mpris2Provider *provider) {
