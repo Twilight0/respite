@@ -26,7 +26,6 @@
 #include <math.h>
 #include <signal.h>
 #include <unistd.h>
-#include <sys/wait.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -78,10 +77,6 @@ static GdkPixbuf *respite_gst_tag_list_get_cover(RespiteGst *gst,
 
 static gboolean   respite_gst_check_dvd_state_change_timeout (gpointer data);
 static gboolean   respite_gst_dvd_menu_timeout (gpointer data);
-
-static void       respite_gst_cleanup_pipe(RespiteGst *gst);
-static void       respite_gst_child_watch_cb(GPid pid, gint status, gpointer user_data);
-static gboolean   respite_gst_spawn_subprocess(RespiteGst *gst, const gchar *url, GError **error);
 
 typedef enum {
     GST_PLAY_FLAG_VIDEO         = (1 << 0),
@@ -147,10 +142,6 @@ struct RespiteGstPrivate {
     gulong              sig1;
     gulong              sig2;
 
-    /* Subprocess pipe mode (yt-dlp) */
-    GPid                child_pid;
-    gint                child_stdout_fd;
-    gboolean            playing_pipe;
 };
 
 enum {
@@ -197,8 +188,6 @@ respite_gst_finalize(GObject *object) {
 
     if ( gst->priv->device )
         g_free(gst->priv->device);
-
-    respite_gst_cleanup_pipe(gst);
 
     g_mutex_clear(&gst->priv->lock);
 
@@ -1543,13 +1532,6 @@ respite_gst_source_notify_cb(GObject *obj, GParamSpec *pspec, RespiteGst *gst) {
                           NULL);
         }
 
-        if (gst->priv->playing_pipe) {
-            GObjectClass *klass = G_OBJECT_GET_CLASS(source);
-            if (g_object_class_find_property(klass, "is-live")) {
-                g_object_set(source, "is-live", TRUE, NULL);
-            }
-        }
-
         g_object_unref(source);
     }
 }
@@ -2198,9 +2180,6 @@ respite_gst_init(RespiteGst *gst) {
     gst->priv->custom_subtitles = NULL;
     gst->priv->volume = -1.0;
     gst->priv->conf = NULL;
-    gst->priv->child_pid = 0;
-    gst->priv->child_stdout_fd = -1;
-    gst->priv->playing_pipe = FALSE;
 
     gtk_widget_set_can_focus(GTK_WIDGET(gst), TRUE);
 
@@ -2275,60 +2254,14 @@ gchar * respite_gst_get_file_uri(RespiteGst *gst) {
     return uri;
 }
 
-static void
-respite_gst_cleanup_pipe(RespiteGst *gst) {
-    if (gst->priv->child_stdout_fd >= 0) {
-        close(gst->priv->child_stdout_fd);
-        gst->priv->child_stdout_fd = -1;
-    }
-
-    if (gst->priv->child_pid > 0) {
-        kill(gst->priv->child_pid, SIGTERM);
-        g_spawn_close_pid(gst->priv->child_pid);
-        gst->priv->child_pid = 0;
-    }
-
-    gst->priv->playing_pipe = FALSE;
-}
-
-static void
-respite_gst_child_watch_cb(GPid     pid,
-                            gint     status,
-                            gpointer user_data) {
-    RespiteGst *gst = RESPITE_GST(user_data);
-
-    if (!gst->priv->playing_pipe)
-        return;
-
-    if (gst->priv->state >= GST_STATE_PAUSED) {
-        gboolean normal_exit = WIFEXITED(status) && WEXITSTATUS(status) == 0;
-        if (!normal_exit) {
-            GstMessage *msg;
-            gchar *debug = g_strdup_printf("Subprocess %d exited with status %d", pid, status);
-            GError *err = g_error_new(1, 0, "%s", _("Stream extraction process failed"));
-            msg = gst_message_new_error(GST_OBJECT(gst->priv->playbin), err, debug);
-            gst_element_post_message(gst->priv->playbin, msg);
-            g_error_free(err);
-            g_free(debug);
-        }
-    }
-
-    g_spawn_close_pid(pid);
-
-    g_mutex_lock(&gst->priv->lock);
-    gst->priv->child_pid = 0;
-    g_mutex_unlock(&gst->priv->lock);
-}
-
 static gboolean
-respite_gst_spawn_subprocess(RespiteGst  *gst,
-                              const gchar *url,
-                              GError     **error) {
-    gchar **argv;
-    GPid    child_pid;
-    gint    child_stdout_fd = -1;
-    gint    child_stderr_fd = -1;
+respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     gchar  *ytdlp_path;
+    gchar  *standard_output = NULL;
+    gchar  *standard_error = NULL;
+    gchar **argv;
+    gint    exit_status;
+    gboolean ret;
 
     ytdlp_path = g_find_program_in_path("yt-dlp");
     if (!ytdlp_path) {
@@ -2337,79 +2270,61 @@ respite_gst_spawn_subprocess(RespiteGst  *gst,
         return FALSE;
     }
 
-    argv = g_new0(gchar *, 8);
+    argv = g_new0(gchar *, 5);
     argv[0] = ytdlp_path;
     argv[1] = g_strdup("--no-check-certificates");
-    argv[2] = g_strdup("-f");
-    argv[3] = g_strdup("best");
-    argv[4] = g_strdup("-o");
-    argv[5] = g_strdup("-");
-    argv[6] = g_strdup(url);
-    argv[7] = NULL;
+    argv[2] = g_strdup("-g");
+    argv[3] = g_strdup(url);
+    argv[4] = NULL;
 
-    if (!g_spawn_async_with_pipes(
-            NULL,
-            argv,
-            NULL,
-            G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDERR_TO_DEV_NULL,
-            NULL,
-            NULL,
-            &child_pid,
-            NULL,
-            &child_stdout_fd,
-            &child_stderr_fd,
-            error))
-    {
-        g_strfreev(argv);
-        return FALSE;
-    }
+    ret = g_spawn_sync(NULL, argv, NULL,
+                       G_SPAWN_STDERR_TO_DEV_NULL,
+                       NULL, NULL,
+                       &standard_output, &standard_error,
+                       &exit_status, error);
 
     g_strfreev(argv);
 
-    if (child_stderr_fd >= 0)
-        close(child_stderr_fd);
+    if (!ret) {
+        return FALSE;
+    }
 
-    gst->priv->child_pid = child_pid;
-    gst->priv->child_stdout_fd = child_stdout_fd;
-    gst->priv->playing_pipe = TRUE;
+    if (exit_status != 0) {
+        gchar *msg = (standard_error && standard_error[0]) ? standard_error : "yt-dlp failed to resolve URL";
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "%s", msg);
+        g_free(standard_output);
+        g_free(standard_error);
+        return FALSE;
+    }
 
-    g_child_watch_add(child_pid, respite_gst_child_watch_cb, gst);
-
+    *resolved = g_strstrip(standard_output);
+    g_free(standard_error);
     return TRUE;
 }
 
 void respite_gst_play_pipe(RespiteGst  *gst,
                             const gchar *url) {
     GError *error = NULL;
-    gchar  *fd_uri;
+    gchar  *resolved_url = NULL;
 
     g_return_if_fail(RESPITE_IS_GST(gst));
     g_return_if_fail(url != NULL);
 
-    respite_gst_stop(gst);
+    TRACE("Resolving URL via yt-dlp: %s", url);
 
-    g_mutex_lock(&gst->priv->lock);
-    gst->priv->target = GST_STATE_PLAYING;
-    respite_stream_init_properties(gst->priv->stream);
-
-    g_object_set(G_OBJECT(gst->priv->stream),
-                 "uri", url,
-                 "media-type", PAROLE_MEDIA_TYPE_REMOTE,
-                 NULL);
-    g_mutex_unlock(&gst->priv->lock);
-
-    if (!respite_gst_spawn_subprocess(gst, url, &error)) {
-        gchar *msg = g_strdup_printf(_("Failed to start stream extractor: %s"), error->message);
+    if (!respite_gst_resolve_url(url, &resolved_url, &error)) {
+        gchar *msg = g_strdup_printf(_("Failed to resolve URL: %s"), error->message);
         g_signal_emit(G_OBJECT(gst), signals[ERROR], 0, msg);
         g_free(msg);
         g_error_free(error);
         return;
     }
 
-    fd_uri = g_strdup_printf("fd://%d", gst->priv->child_stdout_fd);
-    TRACE("Playing pipe: uri=%s", fd_uri);
-    g_object_set(G_OBJECT(gst->priv->playbin), "uri", fd_uri, NULL);
-    g_free(fd_uri);
+    TRACE("Resolved URL: %s", resolved_url);
+
+    respite_gst_play_uri(gst, resolved_url, NULL);
+    g_free(resolved_url);
+}
 
     if (gst->priv->state_change_id == 0) {
         gst->priv->state_change_id = g_timeout_add_seconds(20,
@@ -2507,7 +2422,6 @@ respite_gst_stop_idle(gpointer data) {
 
     gst = RESPITE_GST(data);
 
-    respite_gst_cleanup_pipe(gst);
     respite_gst_change_state(gst, GST_STATE_NULL);
 
     return FALSE;
