@@ -2257,6 +2257,7 @@ gchar * respite_gst_get_file_uri(RespiteGst *gst) {
 static gboolean
 respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     gchar  *ytdlp_path;
+    gchar  *script_path;
     gchar  *standard_output = NULL;
     gchar  *standard_error = NULL;
     gchar **argv;
@@ -2267,15 +2268,18 @@ respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     if (!ytdlp_path) {
         g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED,
                     "yt-dlp not found in PATH");
+        g_free(ytdlp_path);
         return FALSE;
     }
+    g_free(ytdlp_path);
 
-    argv = g_new0(gchar *, 5);
-    argv[0] = ytdlp_path;
-    argv[1] = g_strdup("--no-check-certificates");
-    argv[2] = g_strdup("-g");
-    argv[3] = g_strdup(url);
-    argv[4] = NULL;
+    script_path = g_build_filename(RESPITE_DATA_DIR, "respite-mpd.py", NULL);
+
+    argv = g_new0(gchar *, 4);
+    argv[0] = g_strdup("python3");
+    argv[1] = script_path;
+    argv[2] = g_strdup(url);
+    argv[3] = NULL;
 
     ret = g_spawn_sync(NULL, argv, NULL,
                        G_SPAWN_STDERR_TO_DEV_NULL,
@@ -2290,7 +2294,7 @@ respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     }
 
     if (exit_status != 0) {
-        gchar *msg = (standard_error && standard_error[0]) ? standard_error : "yt-dlp failed to resolve URL";
+        gchar *msg = (standard_error && standard_error[0]) ? standard_error : "Failed to resolve URL";
         g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "%s", msg);
         g_free(standard_output);
         g_free(standard_error);

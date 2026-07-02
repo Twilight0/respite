@@ -101,9 +101,15 @@ executable(
     '-DRESPITE_PLUGINS_DIR="@0@"'.format(get_option('prefix') / get_option('libdir') / 'respite-0'),
     '-DRESPITE_PLUGINS_DATA_DIR="@0@"'.format(pkgdatadir / 'respite-plugins-0'),
     '-DPIXMAPS_DIR="@0@"'.format(pkgdatadir / 'pixmaps'),
+    '-DRESPITE_DATA_DIR="@0@"'.format(pkgdatadir),
     '-DRESPITE_COMPILATION',
     '-DG_LOG_DOMAIN="@0@"'.format('parole'),
   ],
   install: true,
   install_dir: get_option('prefix') / get_option('bindir'),
+)
+
+install_data(
+  'respite-mpd.py',
+  install_dir: pkgdatadir,
 )
