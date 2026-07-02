@@ -2326,15 +2326,6 @@ void respite_gst_play_pipe(RespiteGst  *gst,
     g_free(resolved_url);
 }
 
-    if (gst->priv->state_change_id == 0) {
-        gst->priv->state_change_id = g_timeout_add_seconds(20,
-            (GSourceFunc)respite_gst_check_state_change_timeout, gst);
-    }
-
-    respite_window_busy_cursor(gtk_widget_get_window(GTK_WIDGET(gst)));
-    g_idle_add((GSourceFunc) respite_gst_play_idle, gst);
-}
-
 void respite_gst_play_uri(RespiteGst *gst, const gchar *uri, const gchar *subtitles) {
     g_mutex_lock(&gst->priv->lock);
 
