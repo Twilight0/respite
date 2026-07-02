@@ -2257,6 +2257,7 @@ gchar * respite_gst_get_file_uri(RespiteGst *gst) {
 static gboolean
 respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     gchar  *ytdlp_path;
+    gchar  *python_path;
     gchar  *script_path;
     gchar  *standard_output = NULL;
     gchar **argv;
@@ -2267,15 +2268,21 @@ respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     if (!ytdlp_path) {
         g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED,
                     "yt-dlp not found in PATH");
-        g_free(ytdlp_path);
         return FALSE;
     }
     g_free(ytdlp_path);
 
+    python_path = g_find_program_in_path("python3");
+    if (!python_path) {
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED,
+                    "python3 not found in PATH");
+        return FALSE;
+    }
+
     script_path = g_build_filename(RESPITE_DATA_DIR, "respite-mpd.py", NULL);
 
     argv = g_new0(gchar *, 4);
-    argv[0] = g_strdup("python3");
+    argv[0] = python_path;
     argv[1] = script_path;
     argv[2] = g_strdup(url);
     argv[3] = NULL;
