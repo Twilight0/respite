@@ -67,6 +67,12 @@
 
 #include "src/respite-player.h"
 
+#include <sys/wait.h>
+
+static void respite_player_media_activated_cb(RespiteMediaList *list,
+                                               GtkTreeRowReference *row,
+                                               RespitePlayer *player);
+
 int GTK_ICON_SIZE_ARTWORK_FALLBACK;
 
 GSimpleAction *playpause_action;
