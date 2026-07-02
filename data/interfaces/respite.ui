@@ -819,11 +819,11 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="media_next">
+                          <object class="GtkButton" id="media_stop">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="receives_default">True</property>
-                            <property name="image">image_media_next</property>
+                            <property name="image">image_media_stop</property>
                             <property name="relief">none</property>
                           </object>
                           <packing>
@@ -833,11 +833,11 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="media_stop">
+                          <object class="GtkButton" id="media_next">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="receives_default">True</property>
-                            <property name="image">image_media_stop</property>
+                            <property name="image">image_media_next</property>
                             <property name="relief">none</property>
                           </object>
                           <packing>

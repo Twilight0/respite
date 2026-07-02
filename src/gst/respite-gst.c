@@ -2276,7 +2276,7 @@ respite_gst_child_watch_cb(GPid pid, gint status, gpointer user_data) {
     close(data->stdout_fd);
     g_spawn_close_pid(pid);
 
-    output = g_string_free_and_steal(str);
+    output = g_string_free(str, FALSE);
 
     if (output && g_strstrip(output)[0]) {
         gchar **lines = g_strsplit(g_strstrip(output), "\n", 2);
@@ -2350,7 +2350,7 @@ void respite_gst_play_pipe(RespiteGst  *gst,
     if (!g_spawn_async_with_pipes(NULL, argv, NULL,
                                   G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDERR_TO_DEV_NULL,
                                   NULL, NULL,
-                                  &child_pid, NULL, &stdout_fd,
+                                  &child_pid, NULL, &stdout_fd, NULL,
                                   &error)) {
         gchar *msg = g_strdup_printf(_("Failed to resolve URL: %s"), error->message);
         g_signal_emit(G_OBJECT(gst), signals[ERROR], 0, msg);
