@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Construct a local MPD manifest from yt-dlp metadata for GStreamer DASH playback."""
+"""Construct a local MPD manifest from yt-dlp metadata for GStreamer DASH playback.
+   For live streams with combined formats, outputs the direct URL instead."""
 
 import html
 import json
@@ -29,7 +30,8 @@ def main():
         print(f"Failed to get metadata: {e}", file=sys.stderr)
         sys.exit(1)
 
-    duration = int(data.get("duration", 0))
+    title = data.get("title", "")
+    is_live = data.get("is_live", False)
 
     # Find best video (mp4/dash) and best audio
     video_fmt = None
@@ -60,34 +62,24 @@ def main():
             elif ext == audio_fmt.get("ext") and fmt.get("abr", 0) > audio_fmt.get("abr", 0):
                 audio_fmt = fmt
 
-    # Fallback: use format 18 if no separate streams found
-    if video_fmt is None and audio_fmt is None:
-        for fmt in data.get("formats", []):
-            if fmt.get("format_id") == "18":
-                # Single stream — just pass URL directly, no MPD needed
-                print(fmt["url"])
-                sys.exit(0)
+    # If we have separate streams, build an MPD
+    if video_fmt and audio_fmt:
+        duration = int(data.get("duration", 0) or 0)
+        video_url = html.escape(video_fmt["url"])
+        audio_url = html.escape(audio_fmt["url"])
+        width = video_fmt.get("width", 1920)
+        height = video_fmt.get("height", 1080)
+        video_br = int(video_fmt.get("vbr", 2000000)) * 1000
+        audio_br = int(audio_fmt.get("abr", 128000)) * 1000
+        audio_sr = int(audio_fmt.get("audio_sample_rate", 44100))
+        framerate = video_fmt.get("fps", 30)
 
-    if video_fmt is None or audio_fmt is None:
-        print("Could not find separate video and audio streams", file=sys.stderr)
-        sys.exit(1)
+        video_ext = video_fmt.get("ext", "mp4")
+        audio_ext = audio_fmt.get("ext", "mp4")
+        video_mime = "video/mp4" if video_ext in ("mp4", "m4a") else "video/webm"
+        audio_mime = "audio/mp4" if audio_ext in ("mp4", "m4a") else "audio/webm"
 
-    video_url = html.escape(video_fmt["url"])
-    audio_url = html.escape(audio_fmt["url"])
-    width = video_fmt.get("width", 1920)
-    height = video_fmt.get("height", 1080)
-    video_br = int(video_fmt.get("vbr", 2000000)) * 1000  # kbit/s -> bit/s
-    audio_br = int(audio_fmt.get("abr", 128000)) * 1000
-    audio_sr = int(audio_fmt.get("audio_sample_rate", 44100))
-    framerate = video_fmt.get("fps", 30)
-
-    # Determine correct MIME types
-    video_ext = video_fmt.get("ext", "mp4")
-    audio_ext = audio_fmt.get("ext", "mp4")
-    video_mime = "video/mp4" if video_ext in ("mp4", "m4a") else "video/webm"
-    audio_mime = "audio/mp4" if audio_ext in ("mp4", "m4a") else "audio/webm"
-
-    mpd = f"""<?xml version="1.0" encoding="UTF-8"?>
+        mpd = f"""<?xml version="1.0" encoding="UTF-8"?>
 <MPD xmlns="urn:mpeg:dash:schema:mpd:2011"
      type="static"
      mediaPresentationDuration="PT{duration}S"
@@ -106,14 +98,38 @@ def main():
   </Period>
 </MPD>"""
 
-    # Write to temp file
-    fd, path = tempfile.mkstemp(suffix=".mpd", prefix="respite-")
-    with os.fdopen(fd, "w") as f:
-        f.write(mpd)
+        fd, path = tempfile.mkstemp(suffix=".mpd", prefix="respite-")
+        with os.fdopen(fd, "w") as f:
+            f.write(mpd)
 
-    # Output: first line = file URI, second line = title
-    title = data.get("title", "")
-    print(f"file://{path}")
+        print(f"file://{path}")
+        print(title)
+        return
+
+    # No separate streams (live stream or fallback) — use best combined format
+    best_combined = None
+    for fmt in data.get("formats", []):
+        vcodec = fmt.get("vcodec", "none")
+        acodec = fmt.get("acodec", "none")
+        ext = fmt.get("ext", "")
+        if vcodec != "none" and acodec != "none" and ext == "mp4":
+            if best_combined is None or fmt.get("height", 0) > best_combined.get("height", 0):
+                best_combined = fmt
+
+    # Last resort: any combined format
+    if best_combined is None:
+        for fmt in data.get("formats", []):
+            vcodec = fmt.get("vcodec", "none")
+            acodec = fmt.get("acodec", "none")
+            if vcodec != "none" and acodec != "none":
+                if best_combined is None or fmt.get("height", 0) > best_combined.get("height", 0):
+                    best_combined = fmt
+
+    if best_combined is None:
+        print("No playable format found", file=sys.stderr)
+        sys.exit(1)
+
+    print(best_combined["url"])
     print(title)
 
 
