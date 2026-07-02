@@ -2301,6 +2301,13 @@ respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
         return FALSE;
     }
 
+    if (standard_output == NULL || g_strstrip(standard_output)[0] == '\0') {
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "yt-dlp returned empty output");
+        g_free(standard_output);
+        g_free(standard_error);
+        return FALSE;
+    }
+
     *resolved = g_strstrip(standard_output);
     g_free(standard_error);
     return TRUE;

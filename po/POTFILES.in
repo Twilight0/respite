@@ -1,6 +1,6 @@
 data/interfaces/mediachooser.ui
 data/interfaces/open-location.ui
-data/interfaces/parole-settings.ui
+data/interfaces/respite-settings.ui
 data/interfaces/respite.ui
 data/interfaces/playlist.ui
 data/interfaces/plugins.ui

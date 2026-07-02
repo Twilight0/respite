@@ -103,7 +103,7 @@ executable(
     '-DPIXMAPS_DIR="@0@"'.format(pkgdatadir / 'pixmaps'),
     '-DRESPITE_DATA_DIR="@0@"'.format(pkgdatadir),
     '-DRESPITE_COMPILATION',
-    '-DG_LOG_DOMAIN="@0@"'.format('parole'),
+    '-DG_LOG_DOMAIN="@0@"'.format('respite'),
   ],
   install: true,
   install_dir: get_option('prefix') / get_option('bindir'),

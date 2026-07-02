@@ -27,8 +27,8 @@
 
 #define RESPITE_DBUS_NAME                    "org.Respite.Media.Player"
 
-#define RESPITE_DBUS_PATH                    "/org/Parole/Media/Player"
-#define RESPITE_DBUS_PLAYLIST_PATH           "/org/Parole/Media/List"
+#define RESPITE_DBUS_PATH                    "/org/Respite/Media/Player"
+#define RESPITE_DBUS_PLAYLIST_PATH           "/org/Respite/Media/List"
 
 #define RESPITE_DBUS_INTERFACE               "org.Respite.Media.Player"
 #define RESPITE_DBUS_PLAYLIST_INTERFACE      "org.Respite.Media.List"

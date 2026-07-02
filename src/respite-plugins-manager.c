@@ -348,23 +348,23 @@ respite_plugins_manager_get_plugin_info(const gchar *desktop_file) {
         goto out;
     }
 
-    info->name = g_key_file_get_locale_string(file, "Parole Plugin", "Name", NULL, NULL);
+    info->name = g_key_file_get_locale_string(file, "Respite Plugin", "Name", NULL, NULL);
 
     if ( !info->name )
         info->name = g_strdup(_("Unknown"));
 
 
-    info->desc = g_key_file_get_locale_string(file, "Parole Plugin", "Description", NULL, NULL);
+    info->desc = g_key_file_get_locale_string(file, "Respite Plugin", "Description", NULL, NULL);
 
     if ( !info->desc )
         info->desc = g_strdup("");
 
-    info->authors = g_key_file_get_string(file, "Parole Plugin", "Authors", NULL);
+    info->authors = g_key_file_get_string(file, "Respite Plugin", "Authors", NULL);
 
     if ( !info->authors )
         info->authors = g_strdup("");
 
-    info->website = g_key_file_get_string(file, "Parole Plugin", "Website", NULL);
+    info->website = g_key_file_get_string(file, "Respite Plugin", "Website", NULL);
 
     if ( !info->website )
         info->website = g_strdup("");
@@ -508,7 +508,7 @@ respite_plugins_manager_get_module_name(const gchar *desktop_file) {
         goto out;
     }
 
-    module_name = g_key_file_get_string(file, "Parole Plugin", "Module", NULL);
+    module_name = g_key_file_get_string(file, "Respite Plugin", "Module", NULL);
     library_name = g_strdup_printf("%s.%s", module_name, G_MODULE_SUFFIX);
     g_free(module_name);
 

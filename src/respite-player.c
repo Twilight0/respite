@@ -477,6 +477,9 @@ respite_player_needs_pipe(const gchar *uri) {
         NULL
     };
 
+    if (uri == NULL)
+        return FALSE;
+
     for (int i = 0; domains[i] != NULL; i++) {
         if (strstr(uri, domains[i]) != NULL) {
             return TRUE;
