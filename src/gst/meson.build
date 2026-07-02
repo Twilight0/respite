@@ -42,6 +42,7 @@ librespitegst = static_library(
   ],
   c_args: [
     '-DRESPITE_COMPILATION',
+    '-DRESPITE_DATA_DIR="@0@"'.format(pkgdatadir),
     '-DG_LOG_DOMAIN="@0@"'.format('respitegst'),
   ],
   dependencies: librespitegst_deps,
