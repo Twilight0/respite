@@ -2259,7 +2259,6 @@ respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     gchar  *ytdlp_path;
     gchar  *script_path;
     gchar  *standard_output = NULL;
-    gchar  *standard_error = NULL;
     gchar **argv;
     gint    exit_status;
     gboolean ret;
@@ -2284,7 +2283,7 @@ respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     ret = g_spawn_sync(NULL, argv, NULL,
                        G_SPAWN_STDERR_TO_DEV_NULL,
                        NULL, NULL,
-                       &standard_output, &standard_error,
+                       &standard_output, NULL,
                        &exit_status, error);
 
     g_strfreev(argv);
@@ -2294,22 +2293,18 @@ respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     }
 
     if (exit_status != 0) {
-        gchar *msg = (standard_error && standard_error[0]) ? standard_error : "Failed to resolve URL";
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "%s", msg);
+        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "Failed to resolve URL");
         g_free(standard_output);
-        g_free(standard_error);
         return FALSE;
     }
 
     if (standard_output == NULL || g_strstrip(standard_output)[0] == '\0') {
         g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "yt-dlp returned empty output");
         g_free(standard_output);
-        g_free(standard_error);
         return FALSE;
     }
 
     *resolved = g_strstrip(standard_output);
-    g_free(standard_error);
     return TRUE;
 }
 
