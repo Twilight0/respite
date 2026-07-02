@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Construct a local MPD manifest from yt-dlp metadata for GStreamer DASH playback."""
 
+import html
 import json
 import os
 import subprocess
@@ -71,8 +72,8 @@ def main():
         print("Could not find separate video and audio streams", file=sys.stderr)
         sys.exit(1)
 
-    video_url = video_fmt["url"]
-    audio_url = audio_fmt["url"]
+    video_url = html.escape(video_fmt["url"])
+    audio_url = html.escape(audio_fmt["url"])
     width = video_fmt.get("width", 1920)
     height = video_fmt.get("height", 1080)
     video_br = int(video_fmt.get("vbr", 2000000)) * 1000  # kbit/s -> bit/s
