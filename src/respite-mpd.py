@@ -111,8 +111,10 @@ def main():
     with os.fdopen(fd, "w") as f:
         f.write(mpd)
 
-    # Print file:// URI
+    # Output: first line = file URI, second line = title
+    title = data.get("title", "")
     print(f"file://{path}")
+    print(title)
 
 
 if __name__ == "__main__":

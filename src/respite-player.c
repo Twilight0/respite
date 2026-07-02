@@ -380,6 +380,7 @@ struct RespitePlayerPrivate {
     GtkWidget          *next_button;
     GtkWidget          *playpause_button;
     GtkWidget          *playpause_image;
+    GtkWidget          *stop_button;
     GtkWidget          *fullscreen_button;
     GtkWidget          *fullscreen_image;
     GtkWidget          *fullscreen_menu_item;
@@ -1116,7 +1117,7 @@ respite_player_media_activated_cb(RespiteMediaList *list, GtkTreeRowReference *r
 
             if (respite_player_needs_pipe(uri)) {
                 if (respite_player_has_ytdlp()) {
-                    respite_gst_play_pipe(RESPITE_GST(player->priv->gst), uri);
+                    respite_gst_play_pipe(RESPITE_GST(player->priv->gst), uri, NULL);
                 } else {
                     respite_player_show_ytdlp_error(player);
                     g_object_unref(file);
@@ -1126,10 +1127,9 @@ respite_player_media_activated_cb(RespiteMediaList *list, GtkTreeRowReference *r
                 respite_gst_play_uri(RESPITE_GST(player->priv->gst),
                                      respite_file_get_uri(file),
                                      sub);
+                gtk_window_set_title(GTK_WINDOW(player->priv->window),
+                                     respite_media_list_get_row_name(player->priv->list, player->priv->row));
             }
-
-            gtk_window_set_title(GTK_WINDOW(player->priv->window),
-                                 respite_media_list_get_row_name(player->priv->list, player->priv->row));
 
             if ( directory ) {
                 g_object_set(G_OBJECT(player->priv->conf),
@@ -1670,6 +1670,11 @@ respite_player_toggle_playpause(RespitePlayer *player) {
 void
 respite_player_playpause_action_cb(GSimpleAction *action) {
     respite_player_toggle_playpause(respite_player);
+}
+
+static void
+respite_player_stop_action_cb(GtkButton *button, RespitePlayer *player) {
+    respite_gst_stop(RESPITE_GST(player->priv->gst));
 }
 
 void
@@ -3428,6 +3433,13 @@ respite_player_init(RespitePlayer *player) {
             G_CALLBACK(respite_player_next_action_cb), NULL);
     g_signal_connect(G_OBJECT(player->priv->next_button), "clicked",
             G_CALLBACK(respite_player_widget_activate_action), player->priv->media_next_action);
+
+
+    /* Stop */
+    player->priv->stop_button = GTK_WIDGET(gtk_builder_get_object(builder, "media_stop"));
+    gtk_widget_set_tooltip_text(GTK_WIDGET(player->priv->stop_button), _("Stop"));
+    g_signal_connect(G_OBJECT(player->priv->stop_button), "clicked",
+            G_CALLBACK(respite_player_stop_action_cb), player);
 
 
     /* Fullscreen */

@@ -2254,29 +2254,89 @@ gchar * respite_gst_get_file_uri(RespiteGst *gst) {
     return uri;
 }
 
-static gboolean
-respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
+typedef struct {
+    RespiteGst *gst;
+    gint        stdout_fd;
+    GPid        child_pid;
+} RespitePipeData;
+
+static void
+respite_gst_child_watch_cb(GPid pid, gint status, gpointer user_data) {
+    RespitePipeData *data = user_data;
+    gchar  *resolved_url = NULL;
+    gchar  *title = NULL;
+    gchar  *output = NULL;
+    guchar  buf[4096];
+    gssize  n;
+    GString *str = g_string_new(NULL);
+
+    /* Read all stdout from the child */
+    while ((n = read(data->stdout_fd, buf, sizeof(buf))) > 0)
+        g_string_append_len(str, (gchar *)buf, n);
+    close(data->stdout_fd);
+    g_spawn_close_pid(pid);
+
+    output = g_string_free_and_steal(str);
+
+    if (output && g_strstrip(output)[0]) {
+        gchar **lines = g_strsplit(g_strstrip(output), "\n", 2);
+        resolved_url = g_strdup(lines[0]);
+        title = (lines[1] && lines[1][0]) ? g_strdup(lines[1]) : g_strdup("");
+        g_strfreev(lines);
+    }
+    g_free(output);
+
+    if (resolved_url) {
+        TRACE("Resolved URL: %s", resolved_url);
+        respite_gst_play_uri(data->gst, resolved_url, NULL);
+
+        /* Set window title if available */
+        if (title && title[0]) {
+            GtkWidget *toplevel = gtk_widget_get_toplevel(GTK_WIDGET(data->gst));
+            if (GTK_IS_WINDOW(toplevel))
+                gtk_window_set_title(GTK_WINDOW(toplevel), title);
+        }
+
+        g_free(resolved_url);
+        g_free(title);
+    } else {
+        g_signal_emit(G_OBJECT(data->gst), signals[ERROR], 0,
+                       "Failed to resolve URL");
+    }
+
+    g_slice_free(RespitePipeData, data);
+}
+
+void respite_gst_play_pipe(RespiteGst  *gst,
+                            const gchar *url,
+                            gchar      **out_title) {
     gchar  *ytdlp_path;
     gchar  *python_path;
     gchar  *script_path;
-    gchar  *standard_output = NULL;
     gchar **argv;
-    gint    exit_status;
-    gboolean ret;
+    GError *error = NULL;
+    GPid    child_pid;
+    gint    stdout_fd;
+
+    g_return_if_fail(RESPITE_IS_GST(gst));
+    g_return_if_fail(url != NULL);
+
+    if (out_title)
+        *out_title = NULL;
+
+    TRACE("Resolving URL via yt-dlp: %s", url);
 
     ytdlp_path = g_find_program_in_path("yt-dlp");
     if (!ytdlp_path) {
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED,
-                    "yt-dlp not found in PATH");
-        return FALSE;
+        g_signal_emit(G_OBJECT(gst), signals[ERROR], 0, "yt-dlp not found in PATH");
+        return;
     }
     g_free(ytdlp_path);
 
     python_path = g_find_program_in_path("python3");
     if (!python_path) {
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED,
-                    "python3 not found in PATH");
-        return FALSE;
+        g_signal_emit(G_OBJECT(gst), signals[ERROR], 0, "python3 not found in PATH");
+        return;
     }
 
     script_path = g_build_filename(RESPITE_DATA_DIR, "respite-mpd.py", NULL);
@@ -2287,56 +2347,27 @@ respite_gst_resolve_url(const gchar *url, gchar **resolved, GError **error) {
     argv[2] = g_strdup(url);
     argv[3] = NULL;
 
-    ret = g_spawn_sync(NULL, argv, NULL,
-                       G_SPAWN_STDERR_TO_DEV_NULL,
-                       NULL, NULL,
-                       &standard_output, NULL,
-                       &exit_status, error);
-
-    g_strfreev(argv);
-
-    if (!ret) {
-        return FALSE;
-    }
-
-    if (exit_status != 0) {
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "Failed to resolve URL");
-        g_free(standard_output);
-        return FALSE;
-    }
-
-    if (standard_output == NULL || g_strstrip(standard_output)[0] == '\0') {
-        g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_FAILED, "yt-dlp returned empty output");
-        g_free(standard_output);
-        return FALSE;
-    }
-
-    *resolved = g_strstrip(standard_output);
-    return TRUE;
-}
-
-void respite_gst_play_pipe(RespiteGst  *gst,
-                            const gchar *url) {
-    GError *error = NULL;
-    gchar  *resolved_url = NULL;
-
-    g_return_if_fail(RESPITE_IS_GST(gst));
-    g_return_if_fail(url != NULL);
-
-    TRACE("Resolving URL via yt-dlp: %s", url);
-
-    if (!respite_gst_resolve_url(url, &resolved_url, &error)) {
+    if (!g_spawn_async_with_pipes(NULL, argv, NULL,
+                                  G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDERR_TO_DEV_NULL,
+                                  NULL, NULL,
+                                  &child_pid, NULL, &stdout_fd,
+                                  &error)) {
         gchar *msg = g_strdup_printf(_("Failed to resolve URL: %s"), error->message);
         g_signal_emit(G_OBJECT(gst), signals[ERROR], 0, msg);
         g_free(msg);
         g_error_free(error);
+        g_strfreev(argv);
         return;
     }
+    g_strfreev(argv);
 
-    TRACE("Resolved URL: %s", resolved_url);
+    /* Store data for the async callback */
+    RespitePipeData *data = g_slice_new0(RespitePipeData);
+    data->gst = gst;
+    data->stdout_fd = stdout_fd;
+    data->child_pid = child_pid;
 
-    respite_gst_play_uri(gst, resolved_url, NULL);
-    g_free(resolved_url);
+    g_child_watch_add(child_pid, respite_gst_child_watch_cb, data);
 }
 
 void respite_gst_play_uri(RespiteGst *gst, const gchar *uri, const gchar *subtitles) {
