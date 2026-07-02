@@ -61,7 +61,7 @@ respite_power_manager_inhibit (GDBusConnection *connection) {
         return cookie;
     }
     if (error) {
-        g_warning ("Inhibiting power management failed %s", error->message);
+        g_debug ("Inhibiting power management failed %s", error->message);
         g_error_free (error);
     }
     return 0;
@@ -88,7 +88,7 @@ respite_power_manager_uninhibit (GDBusConnection *connection,
                                          &error);
 
     if (error) {
-        g_warning ("Uninhibiting power management failed: %s", error->message);
+        g_debug ("Uninhibiting power management failed: %s", error->message);
         g_error_free (error);
     } else {
         g_variant_unref (reply);
@@ -103,7 +103,7 @@ respite_power_manager_dbus_init (void)
 
     connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
     if (error) {
-        g_warning ("Failed to get session bus: %s", error->message);
+        g_debug ("Failed to get session bus: %s", error->message);
         g_error_free (error);
     }
     return connection;

@@ -201,7 +201,7 @@ respite_file_constructed(GObject *object) {
         goto out;
     }
 #ifdef HAVE_TAGLIBC
-    if (!error) {
+    if (!error && g_str_has_prefix(file->priv->filename, "file:/")) {
         TagLib_File *tag_file;
         TagLib_Tag *tag;
         gchar *title;
