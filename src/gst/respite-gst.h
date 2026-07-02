@@ -101,6 +101,8 @@ void        respite_gst_set_custom_subtitles (RespiteGst *gst,
 
 gchar*      respite_gst_get_file_uri         (RespiteGst *gst);
 
+const gchar* respite_gst_get_pipe_title      (RespiteGst *gst);
+
 void        respite_gst_play_uri             (RespiteGst *gst,
                                              const gchar *uri,
                                              const gchar *subtitles);

@@ -344,6 +344,11 @@ int main(int argc, char **argv) {
         if ( filenames && filenames[0] != NULL ) {
             if (g_strv_length(filenames) == 1 && respite_is_uri_disc(filenames[0])) {
                 respite_player_play_uri_disc(player, filenames[0], device);
+            } else if (g_strv_length(filenames) == 1 &&
+                       (strstr(filenames[0], "playlist?list=") != NULL ||
+                        strstr(filenames[0], "list=") != NULL)) {
+                /* YouTube playlist URL */
+                respite_player_load_playlist(player, filenames[0]);
             } else {
                 RespiteMediaList *list;
                 list = respite_player_get_media_list(player);

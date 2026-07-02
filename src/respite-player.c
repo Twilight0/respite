@@ -512,6 +512,144 @@ respite_player_show_ytdlp_error(RespitePlayer *player) {
     gtk_widget_destroy(dialog);
 }
 
+static gboolean
+respite_player_is_playlist_url(const gchar *uri) {
+    if (uri == NULL)
+        return FALSE;
+    return strstr(uri, "playlist?list=") != NULL ||
+           strstr(uri, "list=") != NULL;
+}
+
+void
+respite_player_load_playlist(RespitePlayer *player, const gchar *url) {
+    gchar  *python_path;
+    gchar  *script_path;
+    gchar **argv;
+    gchar  *standard_output = NULL;
+    GError *error = NULL;
+    GPid    child_pid;
+    gint    stdout_fd;
+    guchar  buf[8192];
+    gssize  n;
+    GString *str;
+    gchar  **lines;
+    gint     i;
+
+    python_path = g_find_program_in_path("python3");
+    if (!python_path) {
+        respite_player_show_ytdlp_error(player);
+        return;
+    }
+
+    script_path = g_build_filename(RESPITE_DATA_DIR, "respite-playlist.py", NULL);
+    argv = g_new0(gchar *, 4);
+    argv[0] = python_path;
+    argv[1] = script_path;
+    argv[2] = g_strdup(url);
+    argv[3] = NULL;
+
+    if (!g_spawn_async_with_pipes(NULL, argv, NULL,
+                                  G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDERR_TO_DEV_NULL,
+                                  NULL, NULL,
+                                  &child_pid, NULL, &stdout_fd, NULL,
+                                  &error)) {
+        gchar *msg = g_strdup_printf(_("Failed to resolve playlist: %s"), error->message);
+        GtkWidget *dialog = gtk_message_dialog_new(
+            GTK_WINDOW(player->priv->window),
+            GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "%s", msg);
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        g_free(msg);
+        g_error_free(error);
+        g_strfreev(argv);
+        return;
+    }
+    g_strfreev(argv);
+
+    /* Read all output synchronously (playlist resolve can take a moment) */
+    str = g_string_new(NULL);
+    while ((n = read(stdout_fd, buf, sizeof(buf))) > 0)
+        g_string_append_len(str, (gchar *)buf, n);
+    close(stdout_fd);
+
+    /* Wait for child to finish */
+    gint exit_status;
+    waitpid(child_pid, &exit_status, 0);
+    g_spawn_close_pid(child_pid);
+
+    standard_output = g_string_free(str, FALSE);
+
+    if (standard_output == NULL || g_strstrip(standard_output)[0] == '\0') {
+        GtkWidget *dialog = gtk_message_dialog_new(
+            GTK_WINDOW(player->priv->window),
+            GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+            _("No videos found in playlist."));
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        g_free(standard_output);
+        return;
+    }
+
+    /* Parse output: alternating URL, title lines */
+    lines = g_strsplit(g_strstrip(standard_output), "\n", -1);
+    g_free(standard_output);
+
+    RespiteMediaList *list = player->priv->list;
+
+    /* Collect URLs into array for add_files */
+    gchar **urls = g_new0(gchar *, 1024);
+    gchar **titles = g_new0(gchar *, 1024);
+    gint count = 0;
+
+    for (i = 0; lines[i] && lines[i + 1]; i += 2) {
+        if (lines[i][0] == '\0')
+            continue;
+        urls[count] = g_strdup(lines[i]);
+        titles[count] = g_strdup(lines[i + 1]);
+        count++;
+    }
+    g_strfreev(lines);
+
+    if (count > 0) {
+        /* Add all URLs to the media list (first will be auto-selected) */
+        respite_media_list_add_files(list, urls, TRUE);
+
+        /* Set titles on rows — iterate the list store directly */
+        GtkTreeRowReference *row = respite_media_list_get_first_row(list);
+        gint idx = 0;
+        while (row && idx < count) {
+            respite_media_list_set_row_name(list, row, titles[idx]);
+            idx++;
+            /* Advance to next row */
+            GtkTreePath *path = gtk_tree_row_reference_get_path(row);
+            gtk_tree_path_next(path);
+            GtkTreeModel *model = gtk_tree_row_reference_get_model(row);
+            gtk_tree_row_reference_free(row);
+            row = gtk_tree_row_reference_new(model, path);
+            gtk_tree_path_free(path);
+            /* Check if reference is still valid */
+            if (!gtk_tree_row_reference_valid(row)) {
+                gtk_tree_row_reference_free(row);
+                row = NULL;
+            }
+        }
+
+        /* Play the first item */
+        GtkTreeRowReference *first = respite_media_list_get_first_row(list);
+        if (first) {
+            respite_media_list_select_row(list, first);
+            respite_player_media_activated_cb(list, first, player);
+        }
+    }
+
+    g_strfreev(urls);
+    for (i = 0; i < count; i++)
+        g_free(titles[i]);
+    g_free(titles);
+}
+
 void respite_show_about(GtkWidget *widget, RespitePlayer *player) {
     respite_about(GTK_WINDOW(player->priv->window));
 }
@@ -1168,6 +1306,14 @@ respite_player_disc_selected_cb(RespiteDisc *disc, const gchar *uri, const gchar
 
 static void
 respite_player_uri_opened_cb(RespiteMediaList *list, const gchar *uri, RespitePlayer *player) {
+    if (respite_player_is_playlist_url(uri)) {
+        if (respite_player_has_ytdlp()) {
+            respite_player_load_playlist(player, uri);
+        } else {
+            respite_player_show_ytdlp_error(player);
+        }
+        return;
+    }
     respite_player_reset(player);
     respite_gst_play_uri(RESPITE_GST(player->priv->gst), uri, NULL);
 }
@@ -1846,6 +1992,8 @@ respite_player_media_tag_cb(RespiteGst *gst, const RespiteStream *stream, Respit
     GdkPixbuf *image = NULL;
 
     if ( player->priv->row ) {
+        const gchar *pipe_title = respite_gst_get_pipe_title(RESPITE_GST(player->priv->gst));
+
         g_object_get(G_OBJECT(stream),
                       "title", &title,
                       "album", &album,
@@ -1854,7 +2002,17 @@ respite_player_media_tag_cb(RespiteGst *gst, const RespiteStream *stream, Respit
                       "uri", &uri,
                       NULL);
 
-        if ( title ) {
+        /* Use pipe title (from yt-dlp) if available, otherwise use tag title */
+        if ( pipe_title && pipe_title[0] ) {
+            respite_media_list_set_row_name(player->priv->list, player->priv->row, pipe_title);
+            gtk_window_set_title(GTK_WINDOW(player->priv->window), pipe_title);
+            gchar *markup = g_markup_printf_escaped(
+                "<span color='#F4F4F4'><b><big>%s</big></b></span>",
+                pipe_title);
+            gtk_label_set_markup(GTK_LABEL(player->priv->audiobox_title), markup);
+            g_free(markup);
+            g_free(title);
+        } else if ( title ) {
             respite_media_list_set_row_name(player->priv->list, player->priv->row, title);
             gtk_window_set_title(GTK_WINDOW(player->priv->window), title);
             gchar *markup = g_markup_printf_escaped(

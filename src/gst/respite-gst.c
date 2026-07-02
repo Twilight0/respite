@@ -130,6 +130,7 @@ struct RespiteGstPrivate {
 
     gboolean            use_custom_subtitles;
     gchar*              custom_subtitles;
+    gchar*              pipe_title;
 
     RespiteAspectRatio   aspect_ratio;
     guint               state_change_id;
@@ -188,6 +189,8 @@ respite_gst_finalize(GObject *object) {
 
     if ( gst->priv->device )
         g_free(gst->priv->device);
+
+    g_free(gst->priv->pipe_title);
 
     g_mutex_clear(&gst->priv->lock);
 
@@ -2254,6 +2257,10 @@ gchar * respite_gst_get_file_uri(RespiteGst *gst) {
     return uri;
 }
 
+const gchar* respite_gst_get_pipe_title(RespiteGst *gst) {
+    return gst->priv->pipe_title;
+}
+
 typedef struct {
     RespiteGst *gst;
     gint        stdout_fd;
@@ -2290,12 +2297,9 @@ respite_gst_child_watch_cb(GPid pid, gint status, gpointer user_data) {
         TRACE("Resolved URL: %s", resolved_url);
         respite_gst_play_uri(data->gst, resolved_url, NULL);
 
-        /* Set window title if available */
-        if (title && title[0]) {
-            GtkWidget *toplevel = gtk_widget_get_toplevel(GTK_WIDGET(data->gst));
-            if (GTK_IS_WINDOW(toplevel))
-                gtk_window_set_title(GTK_WINDOW(toplevel), title);
-        }
+        /* Store title for the tag callback to use */
+        g_free(data->gst->priv->pipe_title);
+        data->gst->priv->pipe_title = (title && title[0]) ? g_strdup(title) : NULL;
 
         g_free(resolved_url);
         g_free(title);
@@ -2375,6 +2379,10 @@ void respite_gst_play_uri(RespiteGst *gst, const gchar *uri, const gchar *subtit
 
     gst->priv->target = GST_STATE_PLAYING;
     respite_stream_init_properties(gst->priv->stream);
+
+    /* Clear pipe title — child_watch_cb will re-set if needed */
+    g_free(gst->priv->pipe_title);
+    gst->priv->pipe_title = NULL;
 
     g_object_set(G_OBJECT(gst->priv->stream),
                  "uri", uri,

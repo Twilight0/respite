@@ -453,6 +453,9 @@ respite_media_list_open_uri(RespiteMediaList *list, const gchar *uri) {
 
     if ( respite_is_uri_disc(uri) ) {
         g_signal_emit(G_OBJECT(list), signals[URI_OPENED], 0, uri);
+    } else if ( strstr(uri, "playlist?list=") != NULL || strstr(uri, "list=") != NULL ) {
+        /* YouTube playlist URL — emit URI_OPENED so player can handle it */
+        g_signal_emit(G_OBJECT(list), signals[URI_OPENED], 0, uri);
     } else {
         file = respite_file_new(uri);
         respite_media_list_add(list, file, FALSE, TRUE, TRUE);

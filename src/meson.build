@@ -111,5 +111,6 @@ executable(
 
 install_data(
   'respite-mpd.py',
+  'respite-playlist.py',
   install_dir: pkgdatadir,
 )

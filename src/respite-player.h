@@ -64,6 +64,9 @@ RespitePlayer                   *respite_player_new               (const gchar *
 
 RespiteMediaList                *respite_player_get_media_list    (RespitePlayer *player);
 
+void                            respite_player_load_playlist     (RespitePlayer *player,
+                                                                 const gchar *url);
+
 void                            respite_player_play_uri_disc     (RespitePlayer *player,
                                                                  const gchar *uri,
                                                                  const gchar *device);
