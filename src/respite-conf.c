@@ -124,7 +124,7 @@ is_int_key(const gchar *key) {
 
 static gboolean
 is_enum_key(const gchar *key) {
-    return g_strcmp0(key, "aspect-ratio") == 0 || g_strcmp0(key, "playlist-position") == 0;
+    return g_strcmp0(key, "aspect-ratio") == 0;
 }
 
 static void

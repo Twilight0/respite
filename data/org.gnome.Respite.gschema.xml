@@ -9,13 +9,6 @@
     <value nick="dvd" value="5"/>
   </enum>
 
-  <enum id="org.gnome.Respite.PlaylistPosition">
-    <value nick="bottom" value="0"/>
-    <value nick="right" value="1"/>
-    <value nick="left" value="2"/>
-    <value nick="detached" value="3"/>
-  </enum>
-
   <schema id="org.gnome.Respite" path="/org/gnome/respite/">
     <!-- Audio -->
     <key name="vis-enabled" type="b">
@@ -77,10 +70,16 @@
       <default>true</default>
       <summary>Play opened files</summary>
     </key>
-    <key name="playlist-position" enum="org.gnome.Respite.PlaylistPosition">
+    <key name="playlist-position" type="s">
       <default>'bottom'</default>
       <summary>Playlist position</summary>
       <description>Position of the playlist panel: bottom, right, left, or detached</description>
+      <choices>
+        <choice value="bottom"/>
+        <choice value="right"/>
+        <choice value="left"/>
+        <choice value="detached"/>
+      </choices>
     </key>
 
     <!-- Subtitles -->
