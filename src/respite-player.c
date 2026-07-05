@@ -2855,6 +2855,15 @@ respite_player_finalize(GObject *object) {
 #endif
 #endif
 
+    if (player->priv->playlist_paned != NULL)
+        g_object_unref(player->priv->playlist_paned);
+    if (player->priv->playlist_revealer != NULL)
+        g_object_unref(player->priv->playlist_revealer);
+    if (player->priv->controls_overlay != NULL)
+        g_object_unref(player->priv->controls_overlay);
+    if (player->priv->playlist_nt != NULL)
+        g_object_unref(player->priv->playlist_nt);
+
     G_OBJECT_CLASS(respite_player_parent_class)->finalize(object);
 }
 
@@ -3607,6 +3616,7 @@ respite_player_init(RespitePlayer *player) {
 
     // Playlist notebook
     player->priv->playlist_nt = GTK_WIDGET(gtk_builder_get_object(builder, "notebook-playlist"));
+    g_object_ref(player->priv->playlist_nt);
     gtk_notebook_append_page(GTK_NOTEBOOK(player->priv->playlist_nt),
                               GTK_WIDGET(player->priv->list),
                               gtk_label_new(_("Playlist")));
@@ -3868,6 +3878,7 @@ respite_player_init(RespitePlayer *player) {
 
     /* Media Controls */
     player->priv->controls_overlay = GTK_WIDGET(gtk_overlay_new());
+    g_object_ref_sink(player->priv->controls_overlay);
     controls_overlay = player->priv->controls_overlay;
 
     player->priv->control = GTK_WIDGET(gtk_builder_get_object(builder, "control"));
@@ -3904,6 +3915,7 @@ respite_player_init(RespitePlayer *player) {
 
         /* Create revealer for the playlist */
         player->priv->playlist_revealer = gtk_revealer_new();
+        g_object_ref_sink(player->priv->playlist_revealer);
         gtk_revealer_set_transition_duration(GTK_REVEALER(player->priv->playlist_revealer), 250);
         gtk_revealer_set_reveal_child(GTK_REVEALER(player->priv->playlist_revealer), FALSE);
         gtk_widget_set_vexpand(player->priv->playlist_revealer, TRUE);
@@ -3913,6 +3925,7 @@ respite_player_init(RespitePlayer *player) {
 
         /* Create paned */
         player->priv->playlist_paned = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
+        g_object_ref_sink(player->priv->playlist_paned);
         gtk_widget_set_hexpand(player->priv->playlist_paned, TRUE);
         gtk_widget_set_vexpand(player->priv->playlist_paned, TRUE);
 
