@@ -371,6 +371,7 @@ struct RespitePlayerPrivate {
     GtkWidget          *playlist_window;
     gchar              *playlist_position;
     GtkWidget          *box2;
+    GtkWidget          *controls_overlay;
     /* Parole Player layouts */
     gboolean            embedded;
     gboolean            full_screen;
@@ -728,30 +729,36 @@ respite_player_playlist_position_changed_cb(GObject *conf, GParamSpec *pspec, Re
     respite_player_apply_playlist_position(player);
 }
 
+static gboolean
+playlist_window_delete_event_cb(GtkWidget *widget, GdkEvent *event, RespitePlayer *player) {
+    respite_player_set_playlist_visible(player, FALSE);
+    return TRUE; /* Prevent default window destroy */
+}
+
 static void
 respite_player_apply_playlist_position(RespitePlayer *player) {
     const gchar *position = player->priv->playlist_position;
     GtkWidget *box2 = player->priv->box2;
-    GtkWidget *content_area = player->priv->eventbox_output;
+    GtkWidget *controls_overlay = player->priv->controls_overlay;
     GtkWidget *parent;
 
-    if (!position || !player->priv->playlist_paned || !player->priv->playlist_revealer || !box2)
+    if (!position || !player->priv->playlist_paned || !player->priv->playlist_revealer || !box2 || !controls_overlay)
         return;
+
+    g_object_ref(player->priv->playlist_paned);
+    g_object_ref(player->priv->playlist_revealer);
+    g_object_ref(player->priv->playlist_nt);
+    g_object_ref(controls_overlay);
 
     /* Detach playlist into a separate window */
     if (g_strcmp0(position, "detached") == 0) {
-        parent = gtk_widget_get_parent(player->priv->playlist_paned);
-        if (parent == GTK_WIDGET(box2)) {
-            GtkWidget *ca = NULL;
-            if (GTK_IS_PANED(player->priv->playlist_paned))
-                ca = gtk_paned_get_child2(GTK_PANED(player->priv->playlist_paned));
-            if (!ca) ca = content_area;
-            g_object_ref(ca);
-            gtk_container_remove(GTK_CONTAINER(player->priv->playlist_paned), ca);
+        parent = gtk_widget_get_parent(controls_overlay);
+        if (parent == GTK_WIDGET(player->priv->playlist_paned)) {
+            gtk_container_remove(GTK_CONTAINER(player->priv->playlist_paned), controls_overlay);
             gtk_container_remove(GTK_CONTAINER(box2), player->priv->playlist_paned);
-            gtk_box_pack_end(GTK_BOX(box2), ca, TRUE, TRUE, 0);
-            g_object_unref(ca);
+            gtk_box_pack_start(GTK_BOX(box2), controls_overlay, TRUE, TRUE, 0);
         }
+
         if (!player->priv->playlist_window) {
             player->priv->playlist_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
             gtk_window_set_title(GTK_WINDOW(player->priv->playlist_window), _("Respite Playlist"));
@@ -759,17 +766,27 @@ respite_player_apply_playlist_position(RespitePlayer *player) {
             gtk_window_set_transient_for(GTK_WINDOW(player->priv->playlist_window),
                                           GTK_WINDOW(player->priv->window));
             gtk_window_set_destroy_with_parent(GTK_WINDOW(player->priv->playlist_window), FALSE);
-            g_signal_connect_swapped(player->priv->playlist_window, "delete-event",
-                                     G_CALLBACK(gtk_widget_hide_on_delete), player);
+            g_signal_connect(player->priv->playlist_window, "delete-event",
+                             G_CALLBACK(playlist_window_delete_event_cb), player);
         }
-        /* Remove notebook from revealer, add to window */
         if (gtk_widget_get_parent(player->priv->playlist_nt) != GTK_WIDGET(player->priv->playlist_window)) {
             gtk_container_remove(GTK_CONTAINER(player->priv->playlist_revealer),
                                  player->priv->playlist_nt);
             gtk_container_add(GTK_CONTAINER(player->priv->playlist_window),
                               player->priv->playlist_nt);
         }
-        gtk_widget_show_all(player->priv->playlist_window);
+        
+        /* Show or hide the window based on playlist visibility */
+        if (respite_player_get_playlist_visible(player)) {
+            gtk_widget_show_all(player->priv->playlist_window);
+        } else {
+            gtk_widget_hide(player->priv->playlist_window);
+        }
+
+        g_object_unref(player->priv->playlist_paned);
+        g_object_unref(player->priv->playlist_revealer);
+        g_object_unref(player->priv->playlist_nt);
+        g_object_unref(controls_overlay);
         return;
     }
 
@@ -781,26 +798,22 @@ respite_player_apply_playlist_position(RespitePlayer *player) {
         gtk_widget_hide(player->priv->playlist_window);
     }
 
-    /* Remove content_area from wherever it is */
-    parent = gtk_widget_get_parent(content_area);
-    if (parent)
-        gtk_container_remove(GTK_CONTAINER(parent), content_area);
-
-    /* Clear the paned children */
-    {
-        GtkWidget *old_child;
-        old_child = gtk_paned_get_child1(GTK_PANED(player->priv->playlist_paned));
-        if (old_child) gtk_container_remove(GTK_CONTAINER(player->priv->playlist_paned), old_child);
-        old_child = gtk_paned_get_child2(GTK_PANED(player->priv->playlist_paned));
-        if (old_child) gtk_container_remove(GTK_CONTAINER(player->priv->playlist_paned), old_child);
+    /* Remove controls_overlay from wherever it is */
+    parent = gtk_widget_get_parent(controls_overlay);
+    if (parent) {
+        gtk_container_remove(GTK_CONTAINER(parent), controls_overlay);
     }
+
+    /* Remove paned from box2 */
+    if (gtk_widget_get_parent(player->priv->playlist_paned) == GTK_WIDGET(box2))
+        gtk_container_remove(GTK_CONTAINER(box2), player->priv->playlist_paned);
 
     /* Configure based on position */
     if (g_strcmp0(position, "right") == 0) {
         gtk_orientable_set_orientation(GTK_ORIENTABLE(player->priv->playlist_paned),
                                         GTK_ORIENTATION_HORIZONTAL);
         gtk_paned_pack1(GTK_PANED(player->priv->playlist_paned),
-                        content_area, TRUE, FALSE);
+                        controls_overlay, TRUE, TRUE);
         gtk_paned_pack2(GTK_PANED(player->priv->playlist_paned),
                         player->priv->playlist_revealer, FALSE, FALSE);
         gtk_revealer_set_transition_type(GTK_REVEALER(player->priv->playlist_revealer),
@@ -813,17 +826,17 @@ respite_player_apply_playlist_position(RespitePlayer *player) {
         gtk_paned_pack1(GTK_PANED(player->priv->playlist_paned),
                         player->priv->playlist_revealer, FALSE, FALSE);
         gtk_paned_pack2(GTK_PANED(player->priv->playlist_paned),
-                        content_area, TRUE, FALSE);
+                        controls_overlay, TRUE, TRUE);
         gtk_revealer_set_transition_type(GTK_REVEALER(player->priv->playlist_revealer),
                                          GTK_REVEALER_TRANSITION_TYPE_SLIDE_RIGHT);
         gtk_widget_set_size_request(player->priv->playlist_revealer, 300, -1);
         gtk_paned_set_position(GTK_PANED(player->priv->playlist_paned), 300);
     } else {
-        /* bottom (default) */
+        /* bottom */
         gtk_orientable_set_orientation(GTK_ORIENTABLE(player->priv->playlist_paned),
                                         GTK_ORIENTATION_VERTICAL);
         gtk_paned_pack1(GTK_PANED(player->priv->playlist_paned),
-                        content_area, TRUE, FALSE);
+                        controls_overlay, TRUE, TRUE);
         gtk_paned_pack2(GTK_PANED(player->priv->playlist_paned),
                         player->priv->playlist_revealer, FALSE, FALSE);
         gtk_revealer_set_transition_type(GTK_REVEALER(player->priv->playlist_revealer),
@@ -832,10 +845,13 @@ respite_player_apply_playlist_position(RespitePlayer *player) {
         gtk_paned_set_position(GTK_PANED(player->priv->playlist_paned), -1);
     }
 
-    /* Ensure paned is in box2 */
-    parent = gtk_widget_get_parent(player->priv->playlist_paned);
-    if (parent != GTK_WIDGET(box2))
-        gtk_box_pack_end(GTK_BOX(box2), player->priv->playlist_paned, TRUE, TRUE, 0);
+    /* Add paned back to box2 */
+    gtk_box_pack_start(GTK_BOX(box2), player->priv->playlist_paned, TRUE, TRUE, 0);
+
+    g_object_unref(player->priv->playlist_paned);
+    g_object_unref(player->priv->playlist_revealer);
+    g_object_unref(player->priv->playlist_nt);
+    g_object_unref(controls_overlay);
 
     gtk_widget_show_all(player->priv->playlist_paned);
 }
@@ -855,9 +871,18 @@ void respite_player_set_playlist_visible(RespitePlayer *player, gboolean visibil
         respite_player_set_cursor_visible(player, TRUE);
     }
 
-    /* Toggle the playlist side panel revealer */
-    if (player->priv->playlist_revealer)
-        gtk_revealer_set_reveal_child(GTK_REVEALER(player->priv->playlist_revealer), visibility);
+    /* Toggle the playlist side panel/window visibility */
+    if (g_strcmp0(player->priv->playlist_position, "detached") == 0) {
+        if (player->priv->playlist_window) {
+            if (visibility)
+                gtk_widget_show_all(player->priv->playlist_window);
+            else
+                gtk_widget_hide(player->priv->playlist_window);
+        }
+    } else {
+        if (player->priv->playlist_revealer)
+            gtk_revealer_set_reveal_child(GTK_REVEALER(player->priv->playlist_revealer), visibility);
+    }
 
     if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(player->priv->showhide_playlist_menu_item)) != visibility)
         gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(player->priv->showhide_playlist_menu_item), visibility);
@@ -3555,92 +3580,8 @@ respite_player_init(RespitePlayer *player) {
                               GTK_WIDGET(player->priv->list),
                               gtk_label_new(_("Playlist")));
 
-    /* Replace the GtkPopover with an expandable side panel (GtkPaned + GtkRevealer) */
-    player->priv->playlist_popover = NULL; /* No longer used */
-
-    {
-        GtkWidget *box2 = GTK_WIDGET(gtk_builder_get_object(builder, "box2"));
-        GtkWidget *video_area = GTK_WIDGET(gtk_builder_get_object(builder, "content_area"));
-        gchar *position = NULL;
-        GtkOrientation paned_orient;
-        GtkRevealerTransitionType revealer_trans;
-        gint paned_w = 300, paned_h = 200;
-
-        player->priv->box2 = box2;
-
-        /* Read playlist position from settings */
-        g_object_get(G_OBJECT(player->priv->conf), "playlist-position", &position, NULL);
-        player->priv->playlist_position = position ? position : g_strdup("bottom");
-
-        /* Determine orientation based on position */
-        if (g_strcmp0(player->priv->playlist_position, "bottom") == 0) {
-            paned_orient = GTK_ORIENTATION_VERTICAL;
-            revealer_trans = GTK_REVEALER_TRANSITION_TYPE_SLIDE_UP;
-        } else if (g_strcmp0(player->priv->playlist_position, "right") == 0) {
-            paned_orient = GTK_ORIENTATION_HORIZONTAL;
-            revealer_trans = GTK_REVEALER_TRANSITION_TYPE_SLIDE_LEFT;
-        } else {
-            /* left or default */
-            paned_orient = GTK_ORIENTATION_HORIZONTAL;
-            revealer_trans = GTK_REVEALER_TRANSITION_TYPE_SLIDE_RIGHT;
-        }
-
-        /* Create GtkPaned with correct orientation from the start */
-        player->priv->playlist_paned = gtk_paned_new(paned_orient);
-        gtk_widget_set_hexpand(player->priv->playlist_paned, TRUE);
-        gtk_widget_set_vexpand(player->priv->playlist_paned, TRUE);
-
-        /* Create GtkRevealer for the playlist side panel */
-        player->priv->playlist_revealer = gtk_revealer_new();
-        gtk_revealer_set_transition_type(GTK_REVEALER(player->priv->playlist_revealer), revealer_trans);
-        gtk_revealer_set_transition_duration(GTK_REVEALER(player->priv->playlist_revealer), 250);
-        gtk_revealer_set_reveal_child(GTK_REVEALER(player->priv->playlist_revealer), FALSE);
-        gtk_widget_set_vexpand(player->priv->playlist_revealer, TRUE);
-
-        /* Set size request based on orientation */
-        if (paned_orient == GTK_ORIENTATION_HORIZONTAL)
-            gtk_widget_set_size_request(player->priv->playlist_revealer, paned_w, -1);
-        else
-            gtk_widget_set_size_request(player->priv->playlist_revealer, -1, paned_h);
-
-        /* Add playlist notebook to the revealer */
-        gtk_container_add(GTK_CONTAINER(player->priv->playlist_revealer),
-                          GTK_WIDGET(player->priv->playlist_nt));
-
-        /* Remove video_area from box2 BEFORE packing into paned */
-        g_object_ref(video_area);
-        gtk_container_remove(GTK_CONTAINER(box2), video_area);
-
-        /* Pack based on position */
-        if (g_strcmp0(player->priv->playlist_position, "left") == 0) {
-            gtk_paned_pack1(GTK_PANED(player->priv->playlist_paned),
-                            player->priv->playlist_revealer, FALSE, FALSE);
-            gtk_paned_pack2(GTK_PANED(player->priv->playlist_paned),
-                            video_area, TRUE, FALSE);
-        } else {
-            gtk_paned_pack1(GTK_PANED(player->priv->playlist_paned),
-                            video_area, TRUE, FALSE);
-            gtk_paned_pack2(GTK_PANED(player->priv->playlist_paned),
-                            player->priv->playlist_revealer, FALSE, FALSE);
-        }
-
-        /* Set initial paned position so the handle is visible */
-        if (paned_orient == GTK_ORIENTATION_HORIZONTAL)
-            gtk_paned_set_position(GTK_PANED(player->priv->playlist_paned),
-                                    g_strcmp0(player->priv->playlist_position, "left") == 0 ? 300 : -1);
-        else
-            gtk_paned_set_position(GTK_PANED(player->priv->playlist_paned), -1);
-
-        /* Add paned to box2 */
-        gtk_box_pack_end(GTK_BOX(box2), player->priv->playlist_paned, TRUE, TRUE, 0);
-        g_object_unref(video_area);
-
-        gtk_widget_show_all(player->priv->playlist_paned);
-
-        /* Re-apply when position changes in preferences */
-        g_signal_connect_swapped(player->priv->conf, "notify::playlist-position",
-                                 G_CALLBACK(respite_player_playlist_position_changed_cb), player);
-    }
+    player->priv->playlist_popover = NULL;
+    player->priv->box2 = GTK_WIDGET(gtk_builder_get_object(builder, "box2"));
 
     /* Menu Bar */
     player->priv->menu_bar = GTK_WIDGET(gtk_builder_get_object(builder, "menubar"));
@@ -3895,7 +3836,8 @@ respite_player_init(RespitePlayer *player) {
 
 
     /* Media Controls */
-    controls_overlay = GTK_WIDGET(gtk_overlay_new());
+    player->priv->controls_overlay = GTK_WIDGET(gtk_overlay_new());
+    controls_overlay = player->priv->controls_overlay;
 
     player->priv->control = GTK_WIDGET(gtk_builder_get_object(builder, "control"));
 
@@ -3921,6 +3863,34 @@ respite_player_init(RespitePlayer *player) {
     gtk_box_set_child_packing(GTK_BOX(player->priv->control), GTK_WIDGET(play_box), TRUE, TRUE, 2, GTK_PACK_START);
     gtk_container_set_border_width(GTK_CONTAINER(play_box), 3);
     gtk_widget_show_all(controls_parent);
+
+    /* Playlist panel setup - AFTER controls_overlay so we wrap it, not eventbox_output */
+    {
+        gchar *position = NULL;
+
+        g_object_get(G_OBJECT(player->priv->conf), "playlist-position", &position, NULL);
+        player->priv->playlist_position = position ? position : g_strdup("bottom");
+
+        /* Create revealer for the playlist */
+        player->priv->playlist_revealer = gtk_revealer_new();
+        gtk_revealer_set_transition_duration(GTK_REVEALER(player->priv->playlist_revealer), 250);
+        gtk_revealer_set_reveal_child(GTK_REVEALER(player->priv->playlist_revealer), FALSE);
+        gtk_widget_set_vexpand(player->priv->playlist_revealer, TRUE);
+
+        gtk_container_add(GTK_CONTAINER(player->priv->playlist_revealer),
+                          GTK_WIDGET(player->priv->playlist_nt));
+
+        /* Create paned */
+        player->priv->playlist_paned = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
+        gtk_widget_set_hexpand(player->priv->playlist_paned, TRUE);
+        gtk_widget_set_vexpand(player->priv->playlist_paned, TRUE);
+
+        /* Apply the actual layout/position */
+        respite_player_apply_playlist_position(player);
+
+        g_signal_connect_swapped(player->priv->conf, "notify::playlist-position",
+                                 G_CALLBACK(respite_player_playlist_position_changed_cb), player);
+    }
 
     /* Enable motion-notify event to prevent hiding controls on mouseover */
     gtk_widget_add_events(GTK_WIDGET(player->priv->control), GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK);

@@ -37,7 +37,7 @@
       <summary>Enable multimedia keys</summary>
     </key>
     <key name="plugins" type="s">
-      <default>'none'</default>
+      <default>'respite-mpris2'</default>
       <summary>Enabled plugins</summary>
     </key>
     <key name="scan-recursive" type="b">
