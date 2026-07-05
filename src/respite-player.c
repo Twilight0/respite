@@ -3560,7 +3560,7 @@ respite_player_init(RespitePlayer *player) {
 
     {
         GtkWidget *box2 = GTK_WIDGET(gtk_builder_get_object(builder, "box2"));
-        GtkWidget *video_area = player->priv->eventbox_output;
+        GtkWidget *video_area = GTK_WIDGET(gtk_builder_get_object(builder, "content_area"));
         gchar *position = NULL;
         GtkOrientation paned_orient;
         GtkRevealerTransitionType revealer_trans;
