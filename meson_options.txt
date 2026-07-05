@@ -29,7 +29,7 @@ option(
 option(
   'mpris2-plugin',
   type: 'feature',
-  value: 'enabled',
+  value: 'auto',
   description: 'Build respite mpris2 plugin',
 )
 
