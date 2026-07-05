@@ -3607,7 +3607,11 @@ respite_player_init(RespitePlayer *player) {
         gtk_container_add(GTK_CONTAINER(player->priv->playlist_revealer),
                           GTK_WIDGET(player->priv->playlist_nt));
 
-        /* Pack based on position: left puts content on pack2, right/bottom on pack1 */
+        /* Remove video_area from box2 BEFORE packing into paned */
+        g_object_ref(video_area);
+        gtk_container_remove(GTK_CONTAINER(box2), video_area);
+
+        /* Pack based on position */
         if (g_strcmp0(player->priv->playlist_position, "left") == 0) {
             gtk_paned_pack1(GTK_PANED(player->priv->playlist_paned),
                             player->priv->playlist_revealer, FALSE, FALSE);
@@ -3627,9 +3631,7 @@ respite_player_init(RespitePlayer *player) {
         else
             gtk_paned_set_position(GTK_PANED(player->priv->playlist_paned), -1);
 
-        /* Reparent: remove content_area from box2, add paned in its place */
-        g_object_ref(video_area);
-        gtk_container_remove(GTK_CONTAINER(box2), video_area);
+        /* Add paned to box2 */
         gtk_box_pack_end(GTK_BOX(box2), player->priv->playlist_paned, TRUE, TRUE, 0);
         g_object_unref(video_area);
 
