@@ -3919,8 +3919,8 @@ respite_player_init(RespitePlayer *player) {
         /* Apply the actual layout/position */
         respite_player_apply_playlist_position(player);
 
-        g_signal_connect_swapped(player->priv->conf, "notify::playlist-position",
-                                 G_CALLBACK(respite_player_playlist_position_changed_cb), player);
+        g_signal_connect(player->priv->conf, "notify::playlist-position",
+                         G_CALLBACK(respite_player_playlist_position_changed_cb), player);
     }
 
     /* Enable motion-notify event to prevent hiding controls on mouseover */
