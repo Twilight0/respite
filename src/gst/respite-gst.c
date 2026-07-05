@@ -168,6 +168,8 @@ static gpointer respite_gst_object = NULL;
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+static void respite_gst_set_video_overlay(RespiteGst *gst);
+
 G_DEFINE_TYPE_WITH_PRIVATE(RespiteGst, respite_gst, GTK_TYPE_WIDGET)
 
 static void
@@ -252,6 +254,33 @@ respite_gst_realize(GtkWidget *widget) {
 
     g_signal_connect(gtk_widget_get_parent(gtk_widget_get_parent(widget)), "draw",
                          G_CALLBACK(respite_gst_parent_expose_event), NULL);
+
+    /* Update GStreamer video overlay with the new window handle */
+    respite_gst_set_video_overlay(gst);
+}
+
+static void
+respite_gst_unrealize(GtkWidget *widget) {
+    RespiteGst *gst = RESPITE_GST(widget);
+    GstElement *video_sink;
+
+    if (gst->priv->playbin) {
+        g_object_get(G_OBJECT(gst->priv->playbin),
+                      "video-sink", &video_sink,
+                      NULL);
+        if (video_sink) {
+#ifdef ENABLE_X11
+            if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
+                gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(video_sink), 0);
+            }
+#endif
+            gst_object_unref(video_sink);
+        }
+    }
+
+    if (GTK_WIDGET_CLASS(respite_gst_parent_class)->unrealize) {
+        GTK_WIDGET_CLASS(respite_gst_parent_class)->unrealize(widget);
+    }
 }
 
 static void
@@ -422,7 +451,8 @@ respite_gst_set_video_overlay(RespiteGst *gst) {
                   "video-sink", &video_sink,
                   NULL);
 
-    g_assert(video_sink != NULL);
+    if (video_sink == NULL)
+        return;
 
 #ifdef ENABLE_X11
     if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
@@ -2053,6 +2083,7 @@ respite_gst_class_init(RespiteGstClass *klass) {
     object_class->get_property = respite_gst_get_property;
 
     widget_class->realize = respite_gst_realize;
+    widget_class->unrealize = respite_gst_unrealize;
     widget_class->show = respite_gst_show;
     widget_class->size_allocate = respite_gst_size_allocate;
 
