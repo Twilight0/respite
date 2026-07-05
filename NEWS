@@ -1,3 +1,43 @@
+1.2.0 (2026-07-05)
+======
+- Playlist Improvements
+  - Playlist is now an expandable side panel (GtkPaned + GtkRevealer) instead
+    of a GtkPopover, expandable to the left with a visible resize handle
+  - Default playlist pane width: 300px, user-resizable via drag
+  - Playlist toggle (F9 / toolbar button) now slides the panel in/out
+- MPRIS2
+  - MPRIS2 plugin is now enabled by default (was disabled)
+  - Full MPRIS2 D-Bus integration: org.mpris.MediaPlayer2.respite
+  - Supports Play, Pause, Stop, Next, Previous, Seek, OpenUri
+  - Exposes PlaybackStatus, Metadata, Volume, LoopStatus, Shuffle properties
+- YouTube / Streaming
+  - YouTube URL resolution via yt-dlp with local MPD manifest construction
+  - Supports VODs (up to 1080p DASH) and live streams (HLS)
+  - YouTube playlist support via --flat-playlist
+  - Async URL resolution (no UI freeze during yt-dlp calls)
+  - Stop button added to media controls
+- General
+  - All Parole references renamed to Respite (files, types, functions, D-Bus)
+  - D-Bus paths renamed to /org/Respite/Media/Player and /org/Respite/Media/List
+  - Plugin loading uses "Respite Plugin" keyfile group
+  - G_LOG_DOMAIN set to "respite"
+  - License dialog newlines fixed
+  - Duplicate button position in UI fixed (media_next was hidden)
+  - TagLib warnings suppressed for non-local files
+  - PowerManagement D-Bus warnings downgraded to debug (expected on non-XFCE)
+  - Full path resolution for yt-dlp and python3 (fixes .xinitrc launches)
+  - .gitignore fixed (src/ is tracked, only build dirs ignored)
+
+1.1.0 (2026-07-01)
+======
+- Initial Respite fork from Parole 4.20.0
+- Removed Xfce dependencies (libxfce4ui, libxfce4util, exo, xfconf)
+- Replaced Xfconf settings with GSettings
+- Replaced GtkStatusIcon tray with XAppStatusIcon
+- Replaced clutter video backend with GtkArea/GstVideoOverlay
+- Ported from autotools to meson build system
+- Desktop file renamed to org.gnome.Respite
+
 4.20.0 (2025-05-21)
 ======
 Meson has been added as a build system in this release, and the

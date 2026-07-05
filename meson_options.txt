@@ -29,8 +29,8 @@ option(
 option(
   'mpris2-plugin',
   type: 'feature',
-  value: 'auto',
-  description: 'Build parole mpris2 plugin',
+  value: 'enabled',
+  description: 'Build respite mpris2 plugin',
 )
 
 option(

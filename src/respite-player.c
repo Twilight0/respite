@@ -364,6 +364,8 @@ struct RespitePlayerPrivate {
     GtkWidget          *window;
     GtkWidget          *playlist_nt;
     GtkWidget          *playlist_popover;
+    GtkWidget          *playlist_paned;
+    GtkWidget          *playlist_revealer;
     /* Parole Player layouts */
     gboolean            embedded;
     gboolean            full_screen;
@@ -728,6 +730,10 @@ void respite_player_set_playlist_visible(RespitePlayer *player, gboolean visibil
         gtk_revealer_set_reveal_child(GTK_REVEALER(player->priv->revealer), TRUE);
         respite_player_set_cursor_visible(player, TRUE);
     }
+
+    /* Toggle the playlist side panel revealer */
+    if (player->priv->playlist_revealer)
+        gtk_revealer_set_reveal_child(GTK_REVEALER(player->priv->playlist_revealer), visibility);
 
     if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(player->priv->showhide_playlist_menu_item)) != visibility)
         gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(player->priv->showhide_playlist_menu_item), visibility);
@@ -3198,8 +3204,6 @@ respite_player_configure_event_cb(GtkWidget *widget, GdkEventConfigure *ev, Resp
         }
     }
 
-    gtk_widget_set_size_request(player->priv->playlist_popover, -1, new_h - 60);
-
     return FALSE;
 }
 
@@ -3427,7 +3431,48 @@ respite_player_init(RespitePlayer *player) {
                               GTK_WIDGET(player->priv->list),
                               gtk_label_new(_("Playlist")));
 
-    player->priv->playlist_popover = GTK_WIDGET(gtk_builder_get_object(builder, "notebook-playlist-popover"));
+    /* Replace the GtkPopover with an expandable side panel (GtkPaned + GtkRevealer) */
+    player->priv->playlist_popover = NULL; /* No longer used */
+
+    {
+        GtkWidget *box2 = GTK_WIDGET(gtk_builder_get_object(builder, "box2"));
+        GtkWidget *video_area = player->priv->eventbox_output;
+
+        /* Create horizontal GtkPaned */
+        player->priv->playlist_paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_widget_set_hexpand(player->priv->playlist_paned, TRUE);
+        gtk_widget_set_vexpand(player->priv->playlist_paned, TRUE);
+
+        /* Create GtkRevealer for the playlist side panel */
+        player->priv->playlist_revealer = gtk_revealer_new();
+        gtk_revealer_set_transition_type(GTK_REVEALER(player->priv->playlist_revealer),
+                                         GTK_REVEALER_TRANSITION_TYPE_SLIDE_RIGHT);
+        gtk_revealer_set_transition_duration(GTK_REVEALER(player->priv->playlist_revealer), 250);
+        gtk_revealer_set_reveal_child(GTK_REVEALER(player->priv->playlist_revealer), FALSE);
+        gtk_widget_set_size_request(player->priv->playlist_revealer, 300, -1);
+        gtk_widget_set_vexpand(player->priv->playlist_revealer, TRUE);
+
+        /* Add playlist notebook to the revealer */
+        gtk_container_add(GTK_CONTAINER(player->priv->playlist_revealer),
+                          GTK_WIDGET(player->priv->playlist_nt));
+
+        /* Add revealer and content_area to the paned */
+        gtk_paned_pack1(GTK_PANED(player->priv->playlist_paned),
+                        player->priv->playlist_revealer, FALSE, FALSE);
+        gtk_paned_pack2(GTK_PANED(player->priv->playlist_paned),
+                        video_area, TRUE, FALSE);
+
+        /* Set initial paned position (300px for playlist) */
+        gtk_paned_set_position(GTK_PANED(player->priv->playlist_paned), 300);
+
+        /* Reparent: remove content_area from box2, add paned in its place */
+        g_object_ref(video_area);
+        gtk_container_remove(GTK_CONTAINER(box2), video_area);
+        gtk_box_pack_end(GTK_BOX(box2), player->priv->playlist_paned, TRUE, TRUE, 0);
+        g_object_unref(video_area);
+
+        gtk_widget_show_all(player->priv->playlist_paned);
+    }
 
     /* Menu Bar */
     player->priv->menu_bar = GTK_WIDGET(gtk_builder_get_object(builder, "menubar"));

@@ -975,15 +975,13 @@ audio-volume-medium-symbolic</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkMenuButton" id="media_playlist">
+                      <object class="GtkToggleButton" id="media_playlist">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Show Playlist</property>
-                        <property name="relief">none</property>
-                        <property name="direction">up</property>
-                        <property name="popover">notebook-playlist-popover</property>
+                        <property name="image">media_playlist_img</property>
                         <child>
                           <object class="GtkImage" id="media_playlist_img">
                             <property name="visible">True</property>
@@ -1023,34 +1021,27 @@ audio-volume-medium-symbolic</property>
       </object>
     </child>
   </object>
-  <object class="GtkPopover" id="notebook-playlist-popover">
+  <object class="GtkNotebook" id="notebook-playlist">
+    <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="relative_to">media_controls</property>
-    <property name="constrain_to">none</property>
+    <property name="no_show_all">True</property>
     <child>
-      <object class="GtkNotebook" id="notebook-playlist">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="no_show_all">True</property>
-        <child>
-          <placeholder/>
-        </child>
-        <child type="tab">
-          <placeholder/>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child type="tab">
-          <placeholder/>
-        </child>
-        <child>
-          <placeholder/>
-        </child>
-        <child type="tab">
-          <placeholder/>
-        </child>
-      </object>
+      <placeholder/>
+    </child>
+    <child type="tab">
+      <placeholder/>
+    </child>
+    <child>
+      <placeholder/>
+    </child>
+    <child type="tab">
+      <placeholder/>
+    </child>
+    <child>
+      <placeholder/>
+    </child>
+    <child type="tab">
+      <placeholder/>
     </child>
   </object>
 </interface>
