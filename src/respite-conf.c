@@ -58,6 +58,7 @@ enum {
     PROP_REPLACE_PLAYLIST,
     PROP_SHUFFLE,
     PROP_START_PLAYING_OPENED_FILES,
+    PROP_PLAYLIST_POSITION,
     /* Subtitles */
     PROP_SUBTITLE_ENABLED,
     PROP_SUBTITLE_ENCODING,
@@ -123,7 +124,7 @@ is_int_key(const gchar *key) {
 
 static gboolean
 is_enum_key(const gchar *key) {
-    return g_strcmp0(key, "aspect-ratio") == 0;
+    return g_strcmp0(key, "aspect-ratio") == 0 || g_strcmp0(key, "playlist-position") == 0;
 }
 
 static void
@@ -528,6 +529,17 @@ respite_conf_class_init(RespiteConfClass *klass) {
                                     NULL,
                                     NULL,
                                     FALSE,
+                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+    /**
+     * RespiteConf:playlist-position:
+     **/
+    g_object_class_install_property(object_class,
+                                    PROP_PLAYLIST_POSITION,
+                                    g_param_spec_string("playlist-position",
+                                    NULL,
+                                    NULL,
+                                    "bottom",
                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 

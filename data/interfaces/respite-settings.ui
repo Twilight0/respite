@@ -789,6 +789,35 @@
                             <property name="top_attach">3</property>
                           </packing>
                         </child>
+                        <child>
+                          <object class="GtkLabel" id="playlist-position-label">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">start</property>
+                            <property name="hexpand">True</property>
+                            <property name="label" translatable="yes">Playlist position</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="playlist-position">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <items>
+                              <item translatable="yes" id="bottom">Bottom</item>
+                              <item translatable="yes" id="right">Right</item>
+                              <item translatable="yes" id="left">Left</item>
+                              <item translatable="yes" id="detached">Detached</item>
+                            </items>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">4</property>
+                          </packing>
+                        </child>
                       </object>
                     </child>
                   </object>

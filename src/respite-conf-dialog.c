@@ -220,6 +220,16 @@ void respite_conf_dialog_sink_plugin_changed_cb(GtkComboBox *widget,  RespiteCon
     g_free(active);
 }
 
+/* Change playlist position */
+void respite_conf_dialog_playlist_position_changed_cb(GtkComboBox *widget, RespiteConfDialog *self) {
+    gchar *active_id = gtk_combo_box_get_active_id(widget);
+    if (active_id) {
+        g_object_set(G_OBJECT(self->priv->conf),
+                     "playlist-position", active_id,
+                     NULL);
+    }
+}
+
 /* Change subtitle font */
 void respite_conf_dialog_font_set_cb(GtkFontButton *button, RespiteConfDialog *self) {
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
@@ -495,6 +505,19 @@ void respite_conf_dialog_open(RespiteConfDialog *self, GtkWidget *parent) {
     g_object_bind_property(G_OBJECT(self->priv->conf), "remember-playlist",
                            switch_widget, "active",
                            G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
+
+    /* Playlist/Playlist position */
+    {
+        GtkWidget *combo = GTK_WIDGET(gtk_builder_get_object(builder, "playlist-position"));
+        gchar *position = NULL;
+        g_object_get(G_OBJECT(self->priv->conf), "playlist-position", &position, NULL);
+        if (position) {
+            gtk_combo_box_set_active_id(GTK_COMBO_BOX(combo), position);
+            g_free(position);
+        }
+        g_signal_connect(G_OBJECT(combo), "changed",
+                         G_CALLBACK(respite_conf_dialog_playlist_position_changed_cb), self);
+    }
 
     /* Subtitles/Automatically show subtitles when playing movie file */
     switch_widget = GTK_WIDGET(gtk_builder_get_object(builder, "enable-subtitle"));
