@@ -1,3 +1,12 @@
+1.2.1 (2026-07-06)
+======
+- Bug Fixes
+  - Fix video overlay not resizing when playlist panel is toggled
+  - Fix replay logo reappearing alongside video after playlist toggle
+  - Fix MPRIS2 not reporting video title for YouTube/yt-dlp streams
+- Improvements
+  - Re-establish GStreamer video overlay handle on widget size changes
+
 1.2.0 (2026-07-05)
 ======
 - Playlist Improvements

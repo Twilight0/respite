@@ -887,6 +887,12 @@ respite_player_apply_playlist_position(RespitePlayer *player) {
     g_object_unref(controls_overlay);
 
     gtk_widget_show_all(player->priv->playlist_paned);
+
+    /* show_all re-shows hidden children like the logo; re-hide based on current state */
+    if (player->priv->logo_image && player->priv->gst &&
+        gst_get_has_video(RESPITE_GST(player->priv->gst))) {
+        gtk_widget_hide(player->priv->logo_image);
+    }
 }
 
 static gboolean respite_player_get_volume_visible(RespitePlayer *player) {
@@ -2196,6 +2202,7 @@ respite_player_media_tag_cb(RespiteGst *gst, const RespiteStream *stream, Respit
 
         /* Use pipe title (from yt-dlp) if available, otherwise use tag title */
         if ( pipe_title && pipe_title[0] ) {
+            g_object_set(G_OBJECT(stream), "title", pipe_title, NULL);
             respite_media_list_set_row_name(player->priv->list, player->priv->row, pipe_title);
             gtk_window_set_title(GTK_WINDOW(player->priv->window), pipe_title);
             gchar *markup = g_markup_printf_escaped(
