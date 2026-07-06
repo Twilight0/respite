@@ -32,8 +32,8 @@ optdepends=(
   'gst-libav: ffmpeg/libav decoder support'
   'yt-dlp: streaming URL support (YouTube, Dailymotion, Rumble, Odysee, Vimeo, Reddit, BiliBili, Archive.org, Twitch)'
 )
-source=("${pkgname}-${pkgver}.tar.gz")
-sha256sums=('SKIP')
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Twilight0/respite/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('c07e4de86b7fa943d79d9e7293735ee9ccb14365636389ee55a340caf618545f')
 
 build() {
   cd "${pkgname}-${pkgver}"
