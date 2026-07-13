@@ -215,7 +215,7 @@
       <object class="GtkCheckMenuItem" id="menu-replace">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Replace playlist when opening files</property>
+        <property name="label" translatable="yes">Clear playlist when opening files</property>
         <property name="use_underline">True</property>
       </object>
     </child>

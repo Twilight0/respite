@@ -352,8 +352,19 @@ respite_media_list_add(RespiteMediaList *list, RespiteFile *file, gboolean disc,
     if ( emit || select_row ) {
         path = gtk_tree_model_get_path(GTK_TREE_MODEL(list_store), &iter);
         row = gtk_tree_row_reference_new(GTK_TREE_MODEL(list_store), path);
-        if ( select_row )
-            respite_media_list_select_path(list, disc, path);
+        if ( select_row ) {
+            /*
+             * The playlist view uses a sorted model, while path above belongs
+             * to the underlying child list store. Convert it so the correct
+             * (newly added) row is highlighted instead of an unrelated one.
+             */
+            GtkTreeModelSort *sort_model = respite_media_list_get_tree_model_sort(list, disc);
+            GtkTreePath *sorted_path = gtk_tree_model_sort_convert_child_path_to_path(sort_model, path);
+            if ( sorted_path ) {
+                respite_media_list_select_path(list, disc, sorted_path);
+                gtk_tree_path_free(sorted_path);
+            }
+        }
         gtk_tree_path_free(path);
         if ( emit )
             g_signal_emit(G_OBJECT(list), signals[MEDIA_ACTIVATED], 0, row);

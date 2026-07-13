@@ -706,7 +706,7 @@
                             <property name="can_focus">False</property>
                             <property name="halign">start</property>
                             <property name="hexpand">True</property>
-                            <property name="label" translatable="yes">Always replace playlist with opened files</property>
+                            <property name="label" translatable="yes">Clear the playlist when opening files</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>

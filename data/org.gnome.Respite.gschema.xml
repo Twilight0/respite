@@ -60,7 +60,8 @@
     </key>
     <key name="replace-playlist" type="b">
       <default>false</default>
-      <summary>Replace playlist</summary>
+      <summary>Clear the playlist when opening files</summary>
+      <description>When enabled, opening a file or URL clears the current playlist before adding the new item(s), so only the opened media is queued.</description>
     </key>
     <key name="shuffle" type="b">
       <default>false</default>
